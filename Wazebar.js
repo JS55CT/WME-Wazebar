@@ -792,27 +792,21 @@ var curr_ver = GM_info.script.version;
         $section.html(
             [
                 "<div>",
-                "<div style='display: flex; margin-bottom: 20px;'>",
-                "<div style='flex: 1; display: flex; flex-direction: column; gap: 16px;'>",
+                "<div style='display: flex; margin-bottom: 10px;'>",
+                "<div style='flex: 1; display: flex; flex-direction: column; gap: 5px;'>",
                 // Font size with default value
                 "<div style='display: flex; align-items: center; gap: 8px;'>",
-                "<input type='number' id='WazeBarFontSize' min='8' style='width: 60px;' value='" +
-                WazeBarSettings.BarFontSize +
-                "'/>",
+                "<input type='number' id='WazeBarFontSize' min='8' style='width: 60px;' value='" + WazeBarSettings.BarFontSize + "'/>",
                 "<label for='WazeBarFontSize'>Font size</label>",
                 "</div>",
                 // Forum font color with default value
                 "<div style='display: flex; align-items: center; gap: 8px;'>",
-                "<input type='color' id='colorPickerForumFont' value='" +
-                WazeBarSettings.ForumFontColor +
-                "'/>",
+                "<input type='color' id='colorPickerForumFont' value='" + WazeBarSettings.ForumFontColor + "'/>",
                 "<label for='colorPickerForumFont'>Forum Links Color</label>",
                 "</div>",
                 // Wiki font color with default value
                 "<div style='display: flex; align-items: center; gap: 8px;'>",
-                "<input type='color' id='colorPickerWikiFont' value='" +
-                WazeBarSettings.WikiFontColor +
-                "'/>",
+                "<input type='color' id='colorPickerWikiFont' value='" + WazeBarSettings.WikiFontColor + "'/>",
                 "<label for='colorPickerWikiFont'>Wiki Links Color</label>",
                 "</div>",
                 // Unread popup delay
@@ -827,33 +821,51 @@ var curr_ver = GM_info.script.version;
                 "</div>",
                 // Horizontal rule before Custom Links section
                 "<hr>",
-                // Custom Links Section
-                
 
+                // Custom Links Section
                 "<div id='customLinksSection'>",
                 "<h4>Custom Links</h4>",
                 "<div id='WazeBarCustomLinks'>",
                 "<div id='WazeBarCustomLinksList'></div>",
                 "<div>",
-                "<div style='display: flex; flex-direction: column;'>",
-                //"<label for='WazeBarCustomURL'>URL</label>",
+                "<div style='display: flex; flex-direction: column; gap: 5px; '>",
                 "<input type='text' id='WazeBarCustomURL' placeholder='Enter URL'/>",
-                //"<label for='WazeBarCustomText'>Text</label>",
                 "<input type='text' id='WazeBarCustomText' placeholder='Enter Link Text'/>",
                 "<button id='WazeBarAddCustomLink'>Add</button>",
                 "</div>",
                 "</div>",
                 "</div>",
                 "</div>",
-         
+                // Horizontal rule before Export/Import Section
+                "<hr>",
+                // Export/Import Section
+                //"<h4>Export/Import</h4>",
+                //"<button class='fa fa-upload fa-2x' aria-hidden='true' id='btnWazebarCopySettings' title='Copy Wazebar settings to the clipboard' data-clipboard-target='#txtWazebarSettings'></button>",
+                //"<textarea rows='4' cols='15' readonly id='txtWazebarSettings'></textarea>",
+                //"<button class='fa fa-download fa-2x' aria-hidden='true' id='btnWazebarImportSettings' title='Import copied settings'></button>",
+                //"<textarea rows='4' cols='15' id='txtWazebarImportSettings'></textarea>",
+                //"</div>",
+
 
                 // Export/Import Section
                 "<h4>Export/Import</h4>",
+                "<div class='wazebar-export-import-section'>",  // Wrap the buttons and textareas in a div for better structure
+
+                // Copy settings button
                 "<button class='fa fa-upload fa-2x' aria-hidden='true' id='btnWazebarCopySettings' title='Copy Wazebar settings to the clipboard' data-clipboard-target='#txtWazebarSettings'></button>",
+
+                // Export settings textarea
                 "<textarea rows='4' cols='15' readonly id='txtWazebarSettings'></textarea>",
+
+                // Import settings button
                 "<button class='fa fa-download fa-2x' aria-hidden='true' id='btnWazebarImportSettings' title='Import copied settings'></button>",
+
+                // Import settings textarea
                 "<textarea rows='4' cols='15' id='txtWazebarImportSettings'></textarea>",
-                "</div>",
+
+                "</div>",  // End of Export/Import Section
+
+                // Start of the Left Column of the Settings Box
                 "<div style='flex: 1;'>",
                 "<div id='WBDisplayOptions'>",
                 "<input type='checkbox' id='WazeForumSetting' /><label for='WazeForumSetting'>Display on Forum pages</label>",
@@ -1480,7 +1492,7 @@ var curr_ver = GM_info.script.version;
             // General text styling for WazeBar elements
             ".WazeBarText { display: inline; padding-right: 5px; margin-right: 5px; border-right: thin solid grey; font-size: " + WazeBarSettings.BarFontSize + "px; }",
             ".WazeBarIcon { display: inline; margin-left: 3px; cursor: pointer; }",
-    
+
             // WazeBar Favorites dropdown styling
             "#WazeBarFavorites { max-height: 300px; z-index: 100; overflow: auto; display: none; position: absolute; background-color: #f9f9f9; min-width: 200px; box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2); margin-top: -2px; padding: 10px; }",
             "#WazeBarFavoritesList { list-style: none; padding: 0; margin: 0; }",
@@ -1492,12 +1504,12 @@ var curr_ver = GM_info.script.version;
             "#WazeBarFavoritesAddContainer input { height: 20px; border: 1px solid #000000; padding: 4px; border-radius: 4px; }",
             "#WazeBarAddFavorite { padding: 8px 12px; font-size: 1rem; background-color: #8BC34A; color: white; border: 2px solid #8BC34A; border-radius: 5px; cursor: pointer; box-sizing: border-box; transition: background-color 0.3s ease, border-color 0.3s ease; }",
             "#WazeBarAddFavorite:hover { background-color: #689F38; border-color: #689F38; }",
-    
+
             // WazeBar Forum / Wiki / Current State Forum & Wiki links styling
             ".WazeBarText.WazeBarWikiItem a { color: " + WazeBarSettings.WikiFontColor + "; }",
             ".WazeBarText.WazeBarForumItem a { color: " + WazeBarSettings.ForumFontColor + "; }",
             ".WazeBarText.WazeBarCurrState a { color: #FF0000; }",
-    
+
             // Settings menu styling
             "#WazeBarSettings { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 700px; background-color: #fff; border: 3px solid #000; border-radius: 10px; padding: 16px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); }",
             "#WazeBarSettings input[type='number'], #WazeBarSettings input[type='text'], #WazeBarSettings textarea { border: 1px solid #000; padding: 8px; border-radius: 4px; margin-bottom: 5px; width: calc(100% - 16px); }",
@@ -1510,35 +1522,36 @@ var curr_ver = GM_info.script.version;
             "#WazeBarSettings #customLinksSection { margin-top: 5px; }", // Adjusted margin-top
             "#WazeBarSettings #customLinksSection div { margin-bottom: 0; }",  // Removed margin-bottom
             "#WazeBarSettings label { display: block; margin-bottom: 5px; }",
-    
+
             // Color Picker styling
             "#colorPickerForumFont, #colorPickerWikiFont { display: inline-block; width: 60px; height: 40px; border: 1px solid #000000; padding: 3px; border-radius: 4px; }",
-    
+
             // Unread messages popup styling
             ".WazeBarUnread { position: absolute; background: white; border: 1px solid rgba(0, 0, 0, 0.2); padding: 10px; box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2); z-index: 100; }",
             ".WazeBarUnreadList { max-height: 150px; overflow-y: auto; }",
-    
+
             // State rows styling
             ".state-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }",
             ".state-row span { width: 100px; }",
-    
+
             // Horizontal rule styling
             "hr { border: none; border-top: 1px solid #ccc; margin: 10px 0 0 0; width: calc(100% - 40px); }", // Removed bottom margin for hr
-    
+
             // Inline element alignment for the settings inputs
             "#WazeBarSettings .flex-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }",
-    
+
             // Additional styles for Custom Links section inputs to match Favorites section inputs
-            "#WazeBarCustomURL, #WazeBarCustomText { height: 30px; border: 1px solid #000000; padding: 4px; border-radius: 4px; margin-bottom: 5px; }",
-    
+            "#WazeBarCustomURL, #WazeBarCustomText { height: 30px; border: 1px solid #000000; padding: 4px; border-radius: 4px; margin-bottom: 5px; width: 100%; box-sizing: border-box; }",
+
             // Button styling for Add Custom Link button to match Add Favorite button
-            "#WazeBarAddCustomLink { padding: 8px 12px; font-size: 1rem; background-color: #8BC34A; color: white; border: 2px solid #8BC34A; border-radius: 5px; cursor: pointer; box-sizing: border-box; transition: background-color 0.3s ease, border-color 0.3s ease; }",
+            "#WazeBarAddCustomLink { padding: 8px 0; font-size: 1rem; background-color: #8BC34A; color: white; border: 2px solid #8BC34A; border-radius: 5px; cursor: pointer; box-sizing: border-box; transition: background-color 0.3s ease, border-color 0.3s ease; width: calc(100% - 16px); margin: 0; }",
             "#WazeBarAddCustomLink:hover { background-color: #689F38; border-color: #689F38; }",
+
         ].join(" ");
-    
+
         // Remove the previous styles if they exist
         $("#WazeBarStyles").remove();
-    
+
         // Append the new styles
         $('<style type="text/css" id="WazeBarStyles">' + css + '</style>').appendTo("head");
     }
