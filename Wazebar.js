@@ -17,18 +17,14 @@
 // @connect      greasyfork.org
 // @grant        GM_xmlhttpRequest
 // @contributionURL https://github.com/WazeDev/Thank-The-Authors
-// @downloadURL http://localhost:8080/Wazebar.js
-// @updateURL http://localhost:8080/Wazebar.js
+// @downloadURL https://update.greasyfork.org/scripts/27604/WME%20Wazebar.user.js
+// @updateURL https://update.greasyfork.org/scripts/27604/WME%20Wazebar.meta.js
 // ==/UserScript==
 
 /*  --------  Add these back before and remove  require http://localhost:8080/Wazebar.js before Submit! -----------
 #require      http://localhost:8080/Wazebar.js    # Local server URL
 #updateURL    http://localhost:8080/Wazebar.js    # Local server URL
 #downloadURL  http://localhost:8080/Wazebar.js    # Local server URL
-
-contributionURL https://github.com/WazeDev/Thank-The-Authors
-downloadURL https://update.greasyfork.org/scripts/27604/WME%20Wazebar.user.js
-updateURL https://update.greasyfork.org/scripts/27604/WME%20Wazebar.meta.js
 */
 
 /* global W */
@@ -809,7 +805,7 @@ var curr_ver = GM_info.script.version;
             [
                 "<div>",
                 "<div class='flex-container' style='margin-bottom: 20px;'>",
-    
+
                 // Start of the Right Flex Column (now the first column)
                 "<div class='flex-column right-column'>",
                 "<div style='display: flex; flex-direction: column; gap: 16px;'>",
@@ -840,7 +836,7 @@ var curr_ver = GM_info.script.version;
                 "</div>",
                 // Horizontal rule before Custom Links section
                 "<hr>",
-    
+
                 // Custom Links Section
                 "<div id='customLinksSection'>",
                 "<h4>Custom Links</h4>",
@@ -854,22 +850,22 @@ var curr_ver = GM_info.script.version;
                 "</div>",
                 "</div>",
                 "<hr>",
-    
+
                 // Export/Import Section
                 "<div id='exportImportSection' style='margin-top: 20px;'>",
                 "<h4>Export/Import</h4>",
                 "<div class='flex-row' style='align-items: flex-start; gap: 10px;'>",
-                "<button class='export-button fa fa-upload' aria-hidden='true' id='btnWazebarCopySettings' title='Copy Wazebar settings to the clipboard' data-clipboard-target='#txtWazebarSettings'></button>",
+                "<button class='export-button fa fa-upload' id='btnWazebarCopySettings' title='Copy Wazebar settings to the clipboard' data-clipboard-target='#txtWazebarSettings'></button>",
                 "<textarea readonly id='txtWazebarSettings' placeholder='Copied settings will appear here'></textarea>",
                 "</div>",
                 "<div class='flex-row' style='align-items: flex-start; gap: 10px; margin-top: 10px;'>",
-                "<button class='import-button fa fa-download' aria-hidden='true' id='btnWazebarImportSettings' title='Import copied settings'></button>",
+                "<button class='import-button fa fa-download' id='btnWazebarImportSettings' title='Import copied settings'></button>",
                 "<textarea id='txtWazebarImportSettings' placeholder='Paste settings here to import'></textarea>",
                 "</div>",
                 "</div>",
                 "</div>",
                 "</div>",
-    
+
                 // Start of the Left Flex Column (now the second column)
                 "<div class='flex-column left-column'>",
                 "<div id='WBDisplayOptions'>",
@@ -890,9 +886,9 @@ var curr_ver = GM_info.script.version;
                 "<div id='WBStates' style='margin-top: 16px;'></div>",
                 "</div>",
                 "</div>",
-                
+
                 "</div>",
-                
+
                 // Bottom section with Save and Cancel buttons
                 "<div style='display: flex; justify-content: space-between; margin-top: 20px;'>",
                 "<a href='" + location.origin + "/forum/viewtopic.php?f=819&t=219816' target='_blank'>Forum thread</a>",
@@ -957,7 +953,8 @@ var curr_ver = GM_info.script.version;
         });
 
         LoadCustomLinks();
-        //LoadSettingsObj(); // add by JS55CT
+        // Load the current JSON settings into the Export Text Box
+        serializeSettings()
 
         $("#WazeBarAddCustomLink").click(function () {
             if (
@@ -976,7 +973,6 @@ var curr_ver = GM_info.script.version;
                 $("#WazeBarCustomText").val("");
                 LoadCustomLinks();
                 SaveSettings();
-                //LoadSettingsObj(); // add by JS55CT
                 BuildWazebar();
             }
         });
@@ -1010,7 +1006,8 @@ var curr_ver = GM_info.script.version;
             SaveSettings();
             BuildWazebar();
             injectCss()
-            $("#txtWazebarSettings").text(localStorage.Wazebar_Settings);
+            serializeSettings()
+
             $("#WazeBarSettings").fadeOut(); // hide settings dialog with fade animation
             $(".WazeBarText").css("font-size", $("#WazeBarFontSize").val() + "px");
         });
@@ -1027,7 +1024,14 @@ var curr_ver = GM_info.script.version;
             }
         });
 
-        new Clipboard("#btnWazebarCopySettings");
+        $("#btnWazebarCopySettings").click(function() {
+            SaveSettings();
+            serializeSettings();
+            new Clipboard("#btnWazebarCopySettings");
+        });
+
+
+        // new Clipboard("#btnWazebarCopySettings");
 
         $("#WazeBarSettings").hide(); // Ensure the settings dialog is initially hidden
     }
@@ -1500,7 +1504,7 @@ var curr_ver = GM_info.script.version;
             // General text styling for WazeBar elements
             ".WazeBarText { display: inline; padding-right: 5px; margin-right: 5px; border-right: thin solid grey; font-size: " + WazeBarSettings.BarFontSize + "px; }",
             ".WazeBarIcon { display: inline; margin-left: 3px; cursor: pointer; }",
-    
+
             // WazeBar styling
             // WazeBar Favorites dropdown styling
             "#WazeBarFavorites { max-height: 300px; z-index: 100; overflow: auto; display: none; position: absolute; background-color: #f9f9f9; min-width: 200px; box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2); margin-top: -2px; padding: 10px; }",
@@ -1513,12 +1517,12 @@ var curr_ver = GM_info.script.version;
             "#WazeBarFavoritesAddContainer input { height: 20px; border: 1px solid #000000; padding: 4px; border-radius: 4px; }",
             "#WazeBarAddFavorite { padding: 8px 12px; font-size: 1rem; background-color: #8BC34A; color: white; border: 2px solid #8BC34A; border-radius: 5px; cursor: pointer; box-sizing: border-box; transition: background-color 0.3s ease, border-color 0.3s ease; }",
             "#WazeBarAddFavorite:hover { background-color: #689F38; border-color: #689F38; }",
-    
+
             // WazeBar Forum / Wiki / Current State Forum & Wiki links styling
             ".WazeBarText.WazeBarWikiItem a { color: " + WazeBarSettings.WikiFontColor + "; }",
             ".WazeBarText.WazeBarForumItem a { color: " + WazeBarSettings.ForumFontColor + "; }",
             ".WazeBarText.WazeBarCurrState a { color: #FF0000; }",
-    
+
             // Settings menu styling
             // Flex container styling
             ".flex-container { display: flex; align-items: start; }",
@@ -1526,7 +1530,7 @@ var curr_ver = GM_info.script.version;
             ".right-column::after { content: ''; position: absolute; top: 0; right: 0; width: 1px; height: 100%; background-color: #ccc; }",
             ".right-column { padding-right: 5px; }",
             ".left-column { padding-left: 5px; }",
-    
+
             "#WazeBarSettings { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 700px; background-color: #fff; border: 3px solid #000; border-radius: 10px; padding: 16px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); }",
             "#WazeBarSettings input[type='number'], #WazeBarSettings input[type='text'], #WazeBarSettings textarea { border: 1px solid #000; padding: 8px; border-radius: 4px; margin-bottom: 5px; width: calc(100% - 16px); }",
             "#WazeBarSettings button { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; }",
@@ -1538,31 +1542,31 @@ var curr_ver = GM_info.script.version;
             "#WazeBarSettings #customLinksSection { margin-top: 5px; }",
             "#WazeBarSettings #customLinksSection div { margin-bottom: 0; }",
             "#WazeBarSettings label { display: block; margin-bottom: 5px; }",
-    
+
             // Color Picker styling
             "#colorPickerForumFont, #colorPickerWikiFont { display: inline-block; width: 60px; height: 40px; border: 1px solid #000000; padding: 3px; border-radius: 4px; }",
-    
+
             // Unread messages popup styling
             ".WazeBarUnread { position: absolute; background: white; border: 1px solid rgba(0, 0, 0, 0.2); padding: 10px; box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2); z-index: 100; }",
             ".WazeBarUnreadList { max-height: 150px; overflow-y: auto; }",
-    
+
             // State rows styling
             ".state-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }",
             ".state-row span { width: 100px; }",
-    
+
             // Horizontal rule styling
             "hr { border: none; border-top: 1px solid #ccc; margin: 10px 0 0 0; width: calc(100% - 16px); }", // Removed bottom margin for hr
-    
+
             // Inline element alignment for the settings inputs
             "#WazeBarSettings .flex-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }",
-    
+
             // Additional styles for Custom Links section inputs to match Favorites section inputs
             "#WazeBarCustomURL, #WazeBarCustomText { height: 30px; border: 1px solid #000000; padding: 4px; border-radius: 4px; margin-bottom: 5px; }",
-    
+
             // Button styling for Add Custom Link button to match Add Favorite button
             "#WazeBarAddCustomLink { padding: 8px 0; font-size: 1rem; background-color: #8BC34A; color: white; border: 2px solid #8BC34A; border-radius: 5px; cursor: pointer; box-sizing: border-box; transition: background-color 0.3s ease, border-color 0.3s ease; width: calc(100% - 16px); margin: 0; }",
             "#WazeBarAddCustomLink:hover { background-color: #689F38; border-color: #689F38; }",
-    
+
             // Custom List styling to match the Favorites styling
             "#WazeBarCustomLinksList { list-style: none; padding: 0; margin: 0; font-family: Arial, sans-serif; }",
             ".custom-item { position: relative; padding: 6px 10px; margin: 8px 0; background: linear-gradient(to right, #f9f9f9, #eaeaea); border-radius: 10px; display: flex; justify-content: space-between; align-items: center; width: calc(100% - 16px); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); transition: background 0.3s ease, transform 0.3s ease; border: 1px solid #ddd; }",
@@ -1570,24 +1574,24 @@ var curr_ver = GM_info.script.version;
             ".custom-item i { cursor: pointer; color: #f56a6a; transition: color 0.3s ease; }",
             ".custom-item:hover { background: #f0f0f0; transform: translateY(-2px); }",
             ".custom-item i:hover { color: #e84141; }",
-    
+
             // Export/Import Section Styling
             "#exportImportSection h4 { margin-bottom: 10px; font-size: 18px; }",
             ".flex-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }",
             ".export-button, .import-button { font-size: 1.5rem; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s ease, transform 0.3s ease; }",
             ".export-button:hover, .import-button:hover { background-color: #0056b3; transform: scale(1.05); }",
             "#txtWazebarSettings, #txtWazebarImportSettings { width: 300px; height: auto; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; box-sizing: border-box; resize: vertical; }",
-    
+
             // Ensure textareas align properly in flex container
             ".flex-row textarea { flex-grow: 0; }",
-    
+
             // Adjust button font sizes for better alignment
             ".fa-upload, .fa-download { font-size: 1.2rem; padding: 10px; }"
         ].join(" ");
-    
+
         // Remove the previous styles if they exist
         $("#WazeBarStyles").remove();
-    
+
         // Append the new styles
         $('<style type="text/css" id="WazeBarStyles">' + css + '</style>').appendTo("head");
     }
@@ -1646,6 +1650,17 @@ var curr_ver = GM_info.script.version;
             if (!WazeBarSettings.hasOwnProperty(prop))
                 WazeBarSettings[prop] = defaultSettings[prop];
         }
+    }
+
+    function serializeSettings() {
+        SaveSettings();  // Save current settings to localStorage
+        const settings = JSON.parse(localStorage.getItem('Wazebar_Settings')) || {};
+        const serialized = JSON.stringify(settings, null, 4);  // Pretty print JSON with 4 spaces indentation
+        
+        // Update #txtWazebarSettings with the serialized settings
+        $("#txtWazebarSettings").text(serialized);
+        
+        return serialized;
     }
 
     function SaveSettings() {
