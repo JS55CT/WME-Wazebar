@@ -1600,19 +1600,7 @@ var curr_ver = GM_info.script.version;
             ".WazeBarText.WazeBarForumItem a { color: " + WazeBarSettings.ForumFontColor + "; }",
             ".WazeBarText.WazeBarCurrState a { color: #FF0000; }",
 
-            // Settings menu styling
-            // Flex container styling
-            //".flex-container { display: flex; align-items: start; width: 100%, gap: 10px; }",
-            //".flex-column { padding: 10px; position: relative; flex: 1; }",
-            //".left-column::after { content: ''; position: absolute; top: 0; right: 0; width: 1px; height: 100%; background-color: #ccc; }",
-
-            // Flex container styling
-            ".flex-container { display: flex; align-items: flex-start; width: 100%; gap: 10px; box-sizing: border-box;}",
-            ".flex-column { padding: 10px; position: relative; box-sizing: border-box; border: 1px solid #ccc; background-color: #f9f9f9; min-width: 280px; flex: 1 1 auto; min-height: 400px; }",
-            // Ensuring left and right padding
-            ".left-column::after { content: ''; position: absolute; top: 0; right: 0; width: 1px; height: 100%; background-color: #ccc; }",
-            ".right-column::before { content: ''; position: absolute; top: 0; left: 0; width: 1px; height: 100%; background-color: #ccc; }",
-
+            // Main Setting Menu diolog
             "#WazeBarSettings { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; border: 3px solid #000; border-radius: 10px; padding: 16px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); overflow: visible; }",
             "#WazeBarSettings input[type='number'], #WazeBarSettings input[type='text'], #WazeBarSettings textarea { border: 1px solid #000; padding: 8px; border-radius: 4px; margin-bottom: 5px; width: calc(100% - 16px); }",
             "#WazeBarSettings button { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; }",
@@ -1627,10 +1615,16 @@ var curr_ver = GM_info.script.version;
             // Inline element alignment for the settings inputs
             "#WazeBarSettings .flex-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }",
 
-            // Color Picker styling
+            // Flex container holds the flex columns on the Main Setting Menu diolog
+            ".flex-container { display: flex; align-items: flex-start; width: 100%; gap: 10px; box-sizing: border-box;}",
+            ".flex-column { padding: 10px; position: relative; box-sizing: border-box; border: 1px solid #ccc; background-color: #f9f9f9; min-width: 280px; flex: 1 1 auto; min-height: 540px; }",
+            ".left-column::after { content: ''; position: absolute; top: 0; right: 0; width: 1px; height: 100%; background-color: #ccc; }",
+            ".right-column::before { content: ''; position: absolute; top: 0; left: 0; width: 1px; height: 100%; background-color: #ccc; }",
+
+            // Color Picker styling for Forumn and Wiki links
             "#colorPickerForumFont, #colorPickerWikiFont { display: inline-block; width: 60px; height: 40px; border: 1px solid #000000; padding: 3px; border-radius: 4px; }",
 
-            // Unread messages popup styling
+            // Unread messages popup delay styling
             ".WazeBarUnread { position: absolute; background: white; border: 1px solid rgba(0, 0, 0, 0.2); padding: 10px; box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2); z-index: 100; }",
             ".WazeBarUnreadList { max-height: 150px; overflow-y: auto; }",
 
@@ -1654,7 +1648,7 @@ var curr_ver = GM_info.script.version;
             "#WazeBarAddCustomLink { padding: 8px 0; font-size: 1rem; background-color: #8BC34A; color: white; border: 2px solid #8BC34A; border-radius: 5px; cursor: pointer; transition: background-color 0.3s ease, border-color 0.3s ease; }",
             "#WazeBarAddCustomLink:hover { background-color: #689F38; border-color: #689F38; }",
 
-            // Custom List styling to match the Favorites styling
+            // Custom List link styling 
             "#WazeBarCustomLinksList { list-style: none; padding: 0; margin: 0; font-family: Arial, sans-serif; }",
             ".custom-item { position: relative; padding: 6px 10px; margin: 8px 0; background: linear-gradient(to right, #f9f9f9, #eaeaea); border-radius: 10px; display: flex; justify-content: space-between; align-items: center; width: 100%; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); transition: background 0.3s ease, transform 0.3s ease; border: 1px solid #ddd; }",
             ".custom-item a { flex-grow: 1; text-decoration: none; color: #555; font-weight: 500; }",
@@ -1666,7 +1660,7 @@ var curr_ver = GM_info.script.version;
             ".flex-row { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }",
             ".export-button, .import-button { font-size: 1.5rem; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s ease, transform 0.3s ease; }",
             ".export-button:hover, .import-button:hover { background-color: #0056b3; transform: scale(1.05); }",
-            "#txtWazebarSettings, #txtWazebarImportSettings { width: 300px; height: auto; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; box-sizing: border-box; resize: vertical; }",
+            "#txtWazebarSettings, #txtWazebarImportSettings { width: 100%; height: auto; min-height: 100px; max-height: 500px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; box-sizing: border-box; resize: vertical; }",
 
             // Ensure textareas align properly in flex container
             ".flex-row textarea { flex-grow: 0; }",
