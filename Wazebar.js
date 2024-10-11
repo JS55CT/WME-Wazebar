@@ -162,15 +162,15 @@ var curr_ver = GM_info.script.version;
         WazeBarSettings.USSMForum ? '<div class="WazeBarText WazeBarForumItem" id="USSMForum"><a href="' + location.origin + '/discuss/c/editors/united-states/us-state-managers/4890" ' + LoadNewTab() + ">US SM</a></div>" : "",
         WazeBarSettings.USChampForum ? '<div class="WazeBarText WazeBarForumItem" id="USChampForum"><a href="' + location.origin + '/discuss/c/editors/united-states/us-waze-champs/4893" ' + LoadNewTab() + ">US Champ</a></div>" : "",
         WazeBarSettings.USWikiForum ? '<div class="WazeBarText WazeBarForumItem" id="USWikiForum"><a href="' + location.origin + '/discuss/c/editors/united-states/us-wiki-discussion/4894" ' + LoadNewTab() + ">US Wiki</a></div>" : "",
-        BuildRegionForumEntries(),
+        //BuildRegionForumEntries(),
         BuildStateForumEntries(),
         BuildStateUnlockEntries(),
         BuildCustomEntries(),
         BuildRegionWikiEntries(),
         BuildStateWikiEntries(),
         BuildCurrentStateEntries(),
-        WazeBarSettings.NAServerUpdate ? '<div style="display: inline;" id="WazebarStatus">NA Server Update: </div>' : "",
-        WazeBarSettings.ROWServerUpdate ? '<div style="display: inline;" id="WazebarStatusROW">ROW Server Update: </div>' : "",
+        WazeBarSettings.NAServerUpdate ? '<div class="WazeBarText WazeBarServerUpdate;" id="WazebarStatus">NA Server Update: </div>' : "",
+        WazeBarSettings.ROWServerUpdate ? '<div class="WazeBarText WazeBarServerUpdate;" id="WazebarStatusROW">ROW Server Update: </div>' : "",
       ].join("")
     );
 
@@ -228,7 +228,9 @@ var curr_ver = GM_info.script.version;
       GM_xmlhttpRequest({
         method: "GET",
         url: "https://storage.googleapis.com/waze-tile-build-public/release-history/na-feed-v2.xml",
-        onload: ParseStatusFeed,
+        onload: function (response) {
+          ParseStatusFeed(response, "NA", "WazebarStatus");
+        },
       });
     }
 
@@ -236,7 +238,9 @@ var curr_ver = GM_info.script.version;
       GM_xmlhttpRequest({
         method: "GET",
         url: "https://storage.googleapis.com/waze-tile-build-public/release-history/intl-feed-v2.xml",
-        onload: ParseStatusFeed,
+        onload: function (response) {
+          ParseStatusFeed(response, "ROW", "WazebarStatusROW");
+        },
       });
     }
 
@@ -275,6 +279,7 @@ var curr_ver = GM_info.script.version;
     setChecked("NAServerUpdateSetting", WazeBarSettings.NAServerUpdate);
     setChecked("ROWServerUpdateSetting", WazeBarSettings.ROWServerUpdate);
     $("#forumInterval")[0].value = WazeBarSettings.forumInterval;
+    $("#forumHistory")[0].value = WazeBarSettings.forumHistory;
     $("#WazeBarFontSize")[0].value = WazeBarSettings.BarFontSize;
     $("#WazeBarUnreadPopupDelay")[0].value = WazeBarSettings.UnreadPopupDelay;
   }
@@ -303,7 +308,7 @@ var curr_ver = GM_info.script.version;
       const index = $(this).data("index");
       WazeBarSettings.Favorites.splice(index, 1);
       SaveSettings();
-      LoadFavorites(); // Reload the updated favorites list
+      LoadFavorites();
     });
   }
 
@@ -342,7 +347,8 @@ var curr_ver = GM_info.script.version;
   }
 
   function StartIntervals() {
-    forumInterval = setInterval(checkForums, WazeBarSettings.forumInterval * 60000);
+    forumInterval = setInterval(checkForums, WazeBarSettings.forumInterval * 60000 );
+
   }
 
   function checkForums() {
@@ -366,119 +372,129 @@ var curr_ver = GM_info.script.version;
     }
   }
 
+  // General Function logic for checkUnreadTopics() from dalverson Github fork - Oct 10, 20204
   function checkUnreadTopics(path, parentID, spanID) {
     var count = 0;
     var jdat, dat1;
 
     $.get(path, function (page) {
-      // Extract the JSON preloaded data from the page
       const jpattern = /data-preloaded=\"(.*)\">/;
       var dat = jpattern.exec(page);
+
       if (dat && dat.length > 1) {
         dat1 = dat[1].replace(/&quot;/g, '"');
-        jdat = JSON.parse(dat1);
-
-        var jdat2;
-        if (jdat.search) {
-          jdat2 = JSON.parse(jdat.search);
-        } else if (jdat.topic_list) {
-          jdat2 = JSON.parse(jdat.topic_list);
-        } else {
-          console.warn("wazebar: invalid json format for", parentID);
+        try {
+          jdat = JSON.parse(dat1);
+        } catch (error) {
+          console.error("wazebar: JSON parse error", error);
           return;
         }
-      } else {
-        console.warn("wazebar: missing data-preloaded attribute in response for", parentID);
-        return;
-      }
 
-      // Get the list of topics from the parsed JSON data
-      var topix = jdat2.topic_list?.topics;
-      if (!topix) {
-        console.warn("wazebar: no topics found for", parentID);
-        return;
-      }
+        var jdat2;
+        var topix;
 
-      var links = "";
-      $("#" + spanID).remove(); // Remove existing unread count span
-
-      topix.forEach(function (tobj) {
-        const ldate = Date.parse(tobj.last_posted_at);
-        const formattedDate = new Date(ldate).toLocaleString(); // method formats the date and time based on the user's system settings
-        const diff = Date.now() - ldate;
-        const dfhrs = diff / 3600000; // Convert milliseconds to hours
-        var lrpn = tobj.last_read_post_number || 0;
-        var hpn = tobj.highest_post_number || 0;
-        var item_to_read = lrpn > 0 && lrpn < hpn ? lrpn + 1 : hpn;
-
-        //if (dfhrs < 48 || lrpn < hpn || tobj.unseen || tobj.unread_posts > 0 || tobj.unread > 0) {
-        if ((dfhrs < 48) || (lrpn < hpn) || tobj.unseen || (tobj.unread_posts > 0) || tobj.unread > 0) {
-          count += 1;
-          links += `
-                      <li class="unread-item">
-                          <a href="https://www.waze.com/discuss/t/${tobj.slug}/${tobj.id}/${item_to_read}" ${LoadNewTab()}>${tobj.fancy_title} (${formattedDate})</a>
-                      </li>
-                  `;
+        if (jdat.search) {
+          jdat2 = JSON.parse(jdat.search);
+          topix = jdat2.topics; // Access topics directly from search JSON format
+        } else if (jdat.topic_list) {
+          jdat2 = JSON.parse(jdat.topic_list);
+          topix = jdat2.topic_list?.topics; // Access topics from the nested topic_list property
+        } else {
+          console.warn("wazebar: invalid JSON format for ", parentID);
+          return;
         }
-      });
 
-      if (count > 0) {
-        // Append unread count and dropdown structure to the parent link
-        $("#" + parentID + " a").append(`
-                  <span style='color:red;font-weight:bold;' id='${spanID}'> 
-                  (${count})
-                  <div class='WazeBarUnread' id='WazeBarUnread${spanID}' style='visibility:hidden;
-                      animation: ${WazeBarSettings.UnreadPopupDelay}s fadeIn; animation-fill-mode: forwards;
-                      left:${$("#" + parentID).position().left}px;
-                      top:${parseInt($("#" + parentID).height()) + forumUnreadOffset}px;'>
-                      <ul class='WazeBarUnreadList' id='WazeBarUnreadList${spanID}'>
-                      </ul>
-                  </div>
-                  </span>
-              `);
+        if (!topix || topix.length === 0) {
+          console.warn("wazebar: No topics found for ", parentID);
+          return;
+        }
 
-        // Populate the dropdown with the unread topics
-        $("#WazeBarUnreadList" + spanID).html(links);
+        $("#" + spanID).remove();
+        var links = "";
+        for (var tp in topix) {
+          if (Object.prototype.hasOwnProperty.call(topix, tp)) {
+            var tobj = topix[tp];
+            const ldate = Date.parse(tobj.last_posted_at);
+            const formattedDate = formatDate(new Date(ldate));
+            const diff = Date.now() - ldate;
+            const dfhrs = diff / 3600000; // hours since last post on this topic
+            var lrpn = tobj.last_read_post_number ? tobj.last_read_post_number : 0;
+            var hpn = tobj.highest_post_number ? tobj.highest_post_number : 0;
+            var item_to_read = lrpn > 0 && lrpn < hpn ? lrpn + 1 : hpn;
+            var fh = WazeBarSettings.forumHistory * 24;
 
-        // Add event handlers to show/hide the dropdown
-        $("#" + spanID)
-          .on("mouseenter", function () {
-            $("#WazeBarUnread" + spanID).css({ visibility: "visible" });
-          })
-          .on("mouseleave", function () {
+            if ((((lrpn > 0 && lrpn < hpn) || (dfhrs < fh && lrpn == 0) || tobj.unseen || tobj.unread > 0 || tobj.unread_posts > 0)) && (dfhrs < fh )) {
+              count += 1;
+              links += `
+            <li class="WazeBarUnreadList unread-item">
+                <a href="https://www.waze.com/discuss/t/${tobj.slug}/${tobj.id}/${item_to_read}" ${LoadNewTab()}>${tobj.fancy_title} (${formattedDate})</a>
+            </li>`;
+            }
+          }
+        }
+
+        if (count > 0) {
+          $("#" + parentID + " a").append(`
+                    <span style='color:red;font-weight:bold;' id='${spanID}'> 
+                    (${count})
+                    <div class='WazeBarUnread' id='WazeBarUnread${spanID}' style='visibility:hidden;
+                        animation: ${WazeBarSettings.UnreadPopupDelay}s fadeIn; animation-fill-mode: forwards;
+                        left:${$("#" + parentID).position().left}px;
+                        top:${parseInt($("#" + parentID).height()) + forumUnreadOffset}px;'>
+                        <ul class='WazeBarUnreadList' id='WazeBarUnreadList${spanID}'>
+                        </ul>
+                    </div>
+                    </span>
+                `);
+
+          $("#WazeBarUnreadList" + spanID).html(links);
+
+          $("#" + spanID)
+            .on("mouseenter", function () {
+              $("#WazeBarUnread" + spanID).css({ visibility: "visible" });
+            })
+            .on("mouseleave", function () {
+              $("#WazeBarUnread" + spanID).css({ visibility: "hidden" });
+            });
+
+          $("#" + spanID + " a").click(function (event) {
+            event.stopPropagation();
             $("#WazeBarUnread" + spanID).css({ visibility: "hidden" });
           });
-
-        $("#" + spanID + " a").click(function (event) {
-          event.stopPropagation();
-          $("#WazeBarUnread" + spanID).css({ visibility: "hidden" });
-        });
+        }
+      } else {
+        console.warn("wazebar: missing data-preloaded ", parentID);
       }
-    }).fail(function (error) {
-      console.error("wazebar: failed to fetch unread topics from", path, error);
     });
-
     return count;
   }
 
-  function ParseStatusFeed(data) {
-    let re = /North America map tiles were successfully updated to: (.*?)<\/title>/;
-    let result;
-    if (WazeBarSettings.NAServerUpdate) {
-      result = new Date(data.responseText.match(re)[1].trim()).toLocaleString();
-      if (WazeBarSettings.ROWServerUpdate) result += " | ";
-      $("#WazebarStatus").append(result);
+  function ParseStatusFeed(data, updateType, targetId) {
+    let regex;
+    if (updateType === "NA") {
+      regex = /North America map tiles were successfully updated to: (.*?)<\/title>/;
+    } else if (updateType === "ROW") {
+      regex = /International map tiles were successfully updated to: (.*?)<\/title>/;
     }
-    if (WazeBarSettings.ROWServerUpdate) {
-      re = /International map tiles were successfully updated to: (.*?)<\/title>/;
-      result = new Date(data.responseText.match(re)[1].trim()).toLocaleString();
-      $("#WazebarStatusROW").append(result);
+
+    const result = data.responseText.match(regex);
+
+    if (result) {
+      const dateString = result[1].trim();
+      const date = new Date(dateString);
+      const formattedDate = formatDate(date);
+
+      console.log(`Update found for ${updateType}: ${formattedDate}`);
+
+      $("#" + targetId).append(formattedDate);
+    } else {
+      $("#" + targetId).append(" No updates found.");
     }
   }
 
   function BuildStateForumEntries() {
     var stateForums = "";
-    Object.keys(WazeBarSettings.header).forEach(function (state, index) {
+    Object.keys(WazeBarSettings.header).forEach(function (state) {
       if (WazeBarSettings.header[state].forum)
         stateForums += '<div class="WazeBarText WazeBarForumItem" id="' + state.replace(" ", "_") + 'Forum"><a href="' + WazeBarSettings.header[state].forum.replace("https://www.waze.com", location.origin) + '" ' + LoadNewTab() + ">" + WazeBarSettings.header[state].abbr + "</a></div>";
     });
@@ -528,7 +544,7 @@ var curr_ver = GM_info.script.version;
 
   function BuildStateWikiEntries() {
     var stateWikis = "";
-    Object.keys(WazeBarSettings.header).forEach(function (state, index) {
+    Object.keys(WazeBarSettings.header).forEach(function (state) {
       if (WazeBarSettings.header[state].wiki) stateWikis += '<div class="WazeBarText WazeBarWikiItem"><a href="' + WazeBarSettings.header[state].wiki + '" target="_blank">' + WazeBarSettings.header[state].abbr + " Wiki</a></div>";
     });
     return stateWikis;
@@ -536,7 +552,7 @@ var curr_ver = GM_info.script.version;
 
   function BuildStateUnlockEntries() {
     var stateUnlocks = "";
-    Object.keys(WazeBarSettings.header).forEach(function (state, index) {
+    Object.keys(WazeBarSettings.header).forEach(function (state) {
       if (WazeBarSettings.header[state].unlock) {
         stateUnlocks +=
           '<div class="WazeBarText WazeBarForumItem" id="' +
@@ -553,20 +569,18 @@ var curr_ver = GM_info.script.version;
     return stateUnlocks;
   }
 
-  function BuildRegionForumEntries() {
-    var regionForums = "";
-    return regionForums;
-  }
+
 
   function BuildRegionWikiEntries() {
     var regionWikis = "";
     if (WazeBarSettings.header.region) {
-      Object.keys(WazeBarSettings.header.region).forEach(function (region, index) {
+      Object.keys(WazeBarSettings.header.region).forEach(function (region) { 
         if (WazeBarSettings.header.region[region].wiki) regionWikis += '<div class="WazeBarText WazeBarWikiItem"><a href="' + WazeBarSettings.header.region[region].wiki + '" target="_blank">' + WazeBarSettings.header.region[region].abbr + " Wiki</a></div>";
       });
     }
     return regionWikis;
   }
+
 
   function BuildSettingsInterface() {
     var $section = $("<div>", { id: "WazeBarSettings" });
@@ -602,6 +616,11 @@ var curr_ver = GM_info.script.version;
         "<div style='display: flex; align-items: center; gap: 8px;'>",
         "<input type='number' id='forumInterval' min='1' style='width: 60px;' value='" + WazeBarSettings.forumInterval + "'/>",
         "<label for='forumInterval'>Forum check frequency (mins)</label>",
+        "</div>",
+        // Forum check frequency
+        "<div style='display: flex; align-items: center; gap: 8px;'>",
+        "<input type='number' id='forumHistory' min='1' style='width: 60px;' value='" + WazeBarSettings.forumHistory + "'/>",
+        "<label for='forumHistory'>Forum History (Days)</label>",
         "</div>",
         // Horizontal rule before Custom Links section
         "<hr>",
@@ -667,7 +686,8 @@ var curr_ver = GM_info.script.version;
         // Start of the Region Dropdown and State check boxes
         //"Region " + BuildRegionDropdown(),
         BuildRegionDropdown(),
-        //"<input type='checkbox' id='RegionForumSetting'/><label for='RegionForumSetting'>Forum</label> <input type='checkbox' id='RegionWikiSetting'/><label for='RegionWikiSetting'>Wiki</label>",
+        //"<input type='checkbox' id='RegionForumSetting'/><label for='RegionForumSetting'>Forum</label>",
+        //"<input type='checkbox' id='RegionWikiSetting'/><label for='RegionWikiSetting'>Wiki</label>",
         "<div id='WBStates' style='margin-top: 16px;'></div>",
         "</div>",
         "</div>",
@@ -708,22 +728,6 @@ var curr_ver = GM_info.script.version;
 
     $("#WazeBarUnreadPopupDelay").keypress(function (event) {
       if (!((event.which >= 48 && event.which <= 57) || (event.which == 46 && (this.value.match(/\./g) || []).length == 0))) event.preventDefault();
-    });
-
-    $("#RegionWikiSetting").change(function () {
-      var selectedItem = $("#WBRegions")[0].options[$("#WBRegions")[0].selectedIndex];
-      var region = selectedItem.value;
-      var wiki = selectedItem.getAttribute("data-wiki");
-      var abbr = selectedItem.getAttribute("data-abbr");
-
-      if (!WazeBarSettings.header.region) WazeBarSettings.header.region = {};
-      if (WazeBarSettings.header.region[region] == null) WazeBarSettings.header.region[region] = {};
-      if (this.checked) {
-        WazeBarSettings.header.region[region].wiki = wiki;
-        WazeBarSettings.header.region[region].abbr = abbr;
-      } else {
-        delete WazeBarSettings.header.region[region].wiki;
-      }
     });
 
     LoadCustomLinks();
@@ -768,10 +772,14 @@ var curr_ver = GM_info.script.version;
     $("#btnWazebarImportSettings").click(function () {
       if ($("#txtWazebarImportSettings").val() !== "") {
         localStorage.Wazebar_Settings = $("#txtWazebarImportSettings").val();
+        updateWazeBarSettingsFromUI();
         LoadSettingsObj();
         LoadSettingsInterface();
         LoadCustomLinks();
+        SaveSettings();
+        serializeSettings();
         BuildWazebar();
+        injectCss();
       }
     });
 
@@ -781,44 +789,43 @@ var curr_ver = GM_info.script.version;
       updateWazeBarSettingsFromUI(); // Step 1: Update settings
       SaveSettings(); // Step 2: Save settings
       serializeSettings(); // Step 3: Serialize settings
-
-      // Step 4: Instantiate Clipboard
+      BuildWazebar(); // Step 4: Rebuild the WazeBar
+      injectCss(); // Step 5: Inject CSS
+      // Step 6: Instantiate Clipboard
       if (clipboardInstance) {
         clipboardInstance.destroy();
       }
       clipboardInstance = new Clipboard("#btnWazebarCopySettings");
 
-      // Optional: Inform the user that settings are copied
-      alert("Your settings have been copied to the clipboard.");
-    });
+      //Inform the user that settings are copied
+      WazeWrap.Alerts.info( GM_info.script.name, 'Your settings have been copied to the clipboard.')});
 
     $("#WazeBarSettings").hide(); // Ensure the settings dialog is initially hidden
   }
 
-  function SelectedRegionChanged() {
-    setChecked("RegionForumSetting", false);
-    setChecked("RegionWikiSetting", false);
 
+  function SelectedRegionChanged() {
+    setChecked("RegionWikiSetting", false);
     var selectedItem = $("#WBRegions")[0].options[$("#WBRegions")[0].selectedIndex];
     var region = selectedItem.value;
     var wiki = selectedItem.getAttribute("data-wiki");
-    //var forum = selectedItem.getAttribute("data-forum");
-
+  
     if (!WazeBarSettings.header.region) WazeBarSettings.header.region = {};
     if (WazeBarSettings.header.region[region] == null) WazeBarSettings.header.region[region] = {};
+  
+    if (WazeBarSettings.header.region[region].wiki && WazeBarSettings.header.region[region].wiki !== "")
+        setChecked("RegionWikiSetting", true); // JS55CT CHECK
+  
+    var wikiCheckboxState = $("#RegionWikiSetting").is(":checked");
 
-    //if (WazeBarSettings.header.region[region].forum && WazeBarSettings.header.region[region].forum !== "") setChecked("RegionForumSetting", true);
-    if (WazeBarSettings.header.region[region].wiki && WazeBarSettings.header.region[region].wiki !== "") setChecked("RegionWikiSetting", true);
-
-    BuildStatesDiv();
+    console.log('wazebar: Current Region',region,wiki,wikiCheckboxState);
+    BuildStatesDiv(region, wikiCheckboxState, wiki);
   }
 
-  function BuildStatesDiv() {
+  function BuildStatesDiv(region, wikiCheckboxState) {
     // Get the state list for this region
     var selectedItem = $("#WBRegions")[0].options[$("#WBRegions")[0].selectedIndex];
     var states = selectedItem.getAttribute("data-states").split(",");
-    var forum = selectedItem.getAttribute("data-forum");
-    var wiki = selectedItem.getAttribute("data-wiki");
 
     $("#WBStates").empty();
 
@@ -832,130 +839,104 @@ var curr_ver = GM_info.script.version;
         </div>
     `;
 
-    // Create the state rows with checkboxes
+    // Include the selected region as the first row, only with the Wiki checkbox
+    var regionHTML = `
+        <div class="state-row">
+            <div class="state-column">${region}</div>
+            <div class="checkbox-column">-</div> <!-- No Forum checkbox for region -->
+            <div class="checkbox-column"><input type='checkbox' id='RegionWikiSetting' ${wikiCheckboxState ? 'checked' : ''} /></div>
+            <div class="checkbox-column">-</div> <!-- No Unlock checkbox for region -->
+        </div>
+    `;
+    
+    // Create the state rows with all checkboxes
     var statesHTML = states
-      .map(function (state) {
-        var stateId = state.replace(" ", "_");
-        return `
-            <div class="state-row">
-                <div class="state-column">${state}</div>
-                <div class="checkbox-column"><input type='checkbox' id='${stateId}ForumSetting' /></div>
-                <div class="checkbox-column"><input type='checkbox' id='${stateId}WikiSetting' /></div>
-                <div class="checkbox-column"><input type='checkbox' id='${stateId}UnlockSetting' /></div>
-            </div>
-        `;
-      })
-      .join("");
+        .map(function (state) {
+            var stateId = state.replace(" ", "_");
+            return `
+                <div class="state-row">
+                    <div class="state-column">${state}</div>
+                    <div class="checkbox-column"><input type='checkbox' id='${stateId}ForumSetting' /></div>
+                    <div class="checkbox-column"><input type='checkbox' id='${stateId}WikiSetting' /></div>
+                    <div class="checkbox-column"><input type='checkbox' id='${stateId}UnlockSetting' /></div>
+                </div>
+            `;
+        })
+        .join("");
 
-    // Append the header and states rows to the container
-    $("#WBStates").append(headerHTML + statesHTML);
+    // Append the header and region (incl. check state) and states rows to the container
+    $("#WBStates").append(headerHTML + regionHTML + statesHTML);
+
+    // ORG LOGIC
+    $("#RegionWikiSetting").change(function () {
+      var selectedItem = $("#WBRegions")[0].options[$("#WBRegions")[0].selectedIndex];
+      var region = selectedItem.value;
+      var wiki = selectedItem.getAttribute("data-wiki");
+      var abbr = selectedItem.getAttribute("data-abbr");
+
+      if (!WazeBarSettings.header.region) WazeBarSettings.header.region = {};
+      if (WazeBarSettings.header.region[region] == null) WazeBarSettings.header.region[region] = {};
+      if (this.checked) {
+        WazeBarSettings.header.region[region].wiki = wiki;
+        WazeBarSettings.header.region[region].abbr = abbr;
+      } else {
+        delete WazeBarSettings.header.region[region].wiki;
+      }
+    });
 
     // Checking previously saved settings (if any) and setting checkboxes accordingly
     states.forEach(function (state) {
-      var stateKey = state.replace(" ", "_");
+        var stateKey = state.replace(" ", "_");
 
-      if (WazeBarSettings.header[state]) {
-        if (WazeBarSettings.header[state].forum && WazeBarSettings.header[state].forum !== "") {
-          setChecked(`${stateKey}ForumSetting`, true);
+        if (WazeBarSettings.header[state]) {
+            if (WazeBarSettings.header[state].forum && WazeBarSettings.header[state].forum !== "") {
+                setChecked(`${stateKey}ForumSetting`, true);
+            }
+            if (WazeBarSettings.header[state].wiki && WazeBarSettings.header[state].wiki !== "") {
+                setChecked(`${stateKey}WikiSetting`, true);
+            }
+            if (WazeBarSettings.header[state].unlock && WazeBarSettings.header[state].unlock !== "") {
+                setChecked(`${stateKey}UnlockSetting`, true);
+            }
         }
-        if (WazeBarSettings.header[state].wiki && WazeBarSettings.header[state].wiki !== "") {
-          setChecked(`${stateKey}WikiSetting`, true);
-        }
-        if (WazeBarSettings.header[state].unlock && WazeBarSettings.header[state].unlock !== "") {
-          setChecked(`${stateKey}UnlockSetting`, true);
-        }
-      }
 
-      $(`#${stateKey}ForumSetting`).change(function () {
-        var stateName = this.id.replace("ForumSetting", "").replace("_", " ");
-        if (!WazeBarSettings.header[stateName]) WazeBarSettings.header[stateName] = {};
-        if (this.checked) {
-          WazeBarSettings.header[stateName].forum = States[stateName].forum;
-          WazeBarSettings.header[stateName].abbr = States[stateName].abbr;
-        } else {
-          delete WazeBarSettings.header[stateName].forum;
-        }
-        SaveSettings();
-      });
+        $(`#${stateKey}ForumSetting`).change(function () {
+            var stateName = this.id.replace("ForumSetting", "").replace("_", " ");
+            if (!WazeBarSettings.header[stateName]) WazeBarSettings.header[stateName] = {};
+            if (this.checked) {
+                WazeBarSettings.header[stateName].forum = States[stateName].forum;
+                WazeBarSettings.header[stateName].abbr = States[stateName].abbr;
+            } else {
+                delete WazeBarSettings.header[stateName].forum;
+            }
+            SaveSettings();
+        });
 
-      $(`#${stateKey}WikiSetting`).change(function () {
-        var stateName = this.id.replace("WikiSetting", "").replace("_", " ");
-        if (!WazeBarSettings.header[stateName]) WazeBarSettings.header[stateName] = {};
-        if (this.checked) {
-          WazeBarSettings.header[stateName].wiki = States[stateName].wiki;
-          WazeBarSettings.header[stateName].abbr = States[stateName].abbr;
-        } else {
-          delete WazeBarSettings.header[stateName].wiki;
-        }
-        SaveSettings();
-      });
+        $(`#${stateKey}WikiSetting`).change(function () {
+            var stateName = this.id.replace("WikiSetting", "").replace("_", " ");
+            if (!WazeBarSettings.header[stateName]) WazeBarSettings.header[stateName] = {};
+            if (this.checked) {
+                WazeBarSettings.header[stateName].wiki = States[stateName].wiki;
+                WazeBarSettings.header[stateName].abbr = States[stateName].abbr;
+            } else {
+                delete WazeBarSettings.header[stateName].wiki;
+            }
+            SaveSettings();
+        });
 
-      $(`#${stateKey}UnlockSetting`).change(function () {
-        var stateName = this.id.replace("UnlockSetting", "").replace("_", " ");
-        if (!WazeBarSettings.header[stateName]) WazeBarSettings.header[stateName] = {};
-        if (this.checked) {
-          WazeBarSettings.header[stateName].unlock = `${location.origin}/forum/search.php?keywords=${stateName}&terms=all&author=&sv=0&fid%5B%5D=622&sc=1&sf=titleonly&sr=topics&sk=t&sd=d&st=0&ch=300&t=0&submit=Search`;
-          WazeBarSettings.header[stateName].abbr = States[stateName].abbr;
-        } else {
-          delete WazeBarSettings.header[stateName].unlock;
-        }
-        SaveSettings();
-      });
+        $(`#${stateKey}UnlockSetting`).change(function () {
+            var stateName = this.id.replace("UnlockSetting", "").replace("_", " ");
+            if (!WazeBarSettings.header[stateName]) WazeBarSettings.header[stateName] = {};
+            if (this.checked) {
+                WazeBarSettings.header[stateName].unlock = `${location.origin}/forum/search.php?keywords=${stateName}&terms=all&author=&sv=0&fid%5B%5D=622&sc=1&sf=titleonly&sr=topics&sk=t&sd=d&st=0&ch=300&t=0&submit=Search`;
+                WazeBarSettings.header[stateName].abbr = States[stateName].abbr;
+            } else {
+                delete WazeBarSettings.header[stateName].unlock;
+            }
+            SaveSettings();
+        });
     });
-  }
-
-  // Checking previously saved settings (if any) and setting checkboxes accordingly
-  states.forEach(function (state) {
-    var stateKey = state.replace(" ", "_");
-
-    if (WazeBarSettings.header[state]) {
-      if (WazeBarSettings.header[state].forum && WazeBarSettings.header[state].forum !== "") {
-        setChecked(`${stateKey}ForumSetting`, true);
-      }
-      if (WazeBarSettings.header[state].wiki && WazeBarSettings.header[state].wiki !== "") {
-        setChecked(`${stateKey}WikiSetting`, true);
-      }
-      if (WazeBarSettings.header[state].unlock && WazeBarSettings.header[state].unlock !== "") {
-        setChecked(`${stateKey}UnlockSetting`, true);
-      }
-    }
-
-    $(`#${stateKey}ForumSetting`).change(function () {
-      var stateName = this.id.replace("ForumSetting", "").replace("_", " ");
-      if (!WazeBarSettings.header[stateName]) WazeBarSettings.header[stateName] = {};
-      if (this.checked) {
-        WazeBarSettings.header[stateName].forum = States[stateName].forum;
-        WazeBarSettings.header[stateName].abbr = States[stateName].abbr;
-      } else {
-        delete WazeBarSettings.header[stateName].forum;
-      }
-      SaveSettings();
-    });
-
-    $(`#${stateKey}WikiSetting`).change(function () {
-      var stateName = this.id.replace("WikiSetting", "").replace("_", " ");
-      if (!WazeBarSettings.header[stateName]) WazeBarSettings.header[stateName] = {};
-      if (this.checked) {
-        WazeBarSettings.header[stateName].wiki = States[stateName].wiki;
-        WazeBarSettings.header[stateName].abbr = States[stateName].abbr;
-      } else {
-        delete WazeBarSettings.header[stateName].wiki;
-      }
-      SaveSettings();
-    });
-
-    $(`#${stateKey}UnlockSetting`).change(function () {
-      var stateName = this.id.replace("UnlockSetting", "").replace("_", " ");
-      if (!WazeBarSettings.header[stateName]) WazeBarSettings.header[stateName] = {};
-      if (this.checked) {
-        WazeBarSettings.header[stateName].unlock = `${location.origin}/forum/search.php?keywords=${stateName}&terms=all&author=&sv=0&fid%5B%5D=622&sc=1&sf=titleonly&sr=topics&sk=t&sd=d&st=0&ch=300&t=0&submit=Search`;
-        WazeBarSettings.header[stateName].abbr = States[stateName].abbr;
-      } else {
-        delete WazeBarSettings.header[stateName].unlock;
-      }
-      SaveSettings();
-    });
-  });
+}
 
   function BuildRegionDropdown() {
     var $places = $("<div>");
@@ -1253,136 +1234,16 @@ var curr_ver = GM_info.script.version;
       abbr: "",
     };
   }
-  /*
+
   function injectCss() {
     var css = [
       // General text styling for WazeBar elements
       ".WazeBarText { display: inline; padding-right: 5px; margin-left: 5px; border-right: thin solid grey; font-size: " + WazeBarSettings.BarFontSize + "px; }",
-      ".WazeBarIcon { display: inline; margin-left: 5px; cursor: pointer; font-size: " + WazeBarSettings.BarFontSize + "px; }",
-
-      // WazeBar styling
-      // WazeBar Favorites dropdown styling
-      "#WazeBarFavorites { max-height: 300px; z-index: 100; overflow: auto; display: none; position: absolute; background-color: #f9f9f9; min-width: 200px; box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2); margin-top: -2px; padding: 10px; }",
-      "#WazeBarFavoritesList { list-style: none; padding: 0; margin: 0; }",
-      ".favorite-item { position: relative; padding: 8px 12px; margin: 4px 0; background: #f1f1f1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }",
-      ".favorite-item a { flex-grow: 1; text-decoration: none; color: #333; }",
-      ".favorite-item i { cursor: pointer; color: #c00; }",
-      ".favorite-item:hover { background: #e1e1e1; }",
-      "#WazeBarFavoritesAddContainer { display: flex; flex-direction: column; margin-top: 10px; gap: 8px; }",
-      "#WazeBarFavoritesAddContainer input { height: 20px; border: 1px solid #000000; padding: 4px; border-radius: 4px; }",
-      "#WazeBarAddFavorite { padding: 8px 12px; font-size: 1rem; background-color: #8BC34A; color: white; border: 2px solid #8BC34A; border-radius: 5px; cursor: pointer; box-sizing: border-box; transition: background-color 0.3s ease, border-color 0.3s ease; }",
-      "#WazeBarAddFavorite:hover { background-color: #689F38; border-color: #689F38; }",
-
       // WazeBar Forum / Wiki / Current State Forum & Wiki links styling
       ".WazeBarText.WazeBarWikiItem a { color: " + WazeBarSettings.WikiFontColor + "; }",
       ".WazeBarText.WazeBarForumItem a { color: " + WazeBarSettings.ForumFontColor + "; }",
       ".WazeBarText.WazeBarCurrState a { color: #FF0000; }",
-
-      // Main Setting Menu diolog
-      "#WazeBarSettings { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; border: 3px solid #000; border-radius: 10px; padding: 16px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); overflow: visible; }",
-      "#WazeBarSettings input[type='number'], #WazeBarSettings input[type='text'], #WazeBarSettings textarea { border: 1px solid #000; padding: 8px; border-radius: 4px; margin-bottom: 5px; width: calc(100% - 16px); }",
-      "#WazeBarSettings button { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; }",
-      "#WazeBarSettings button#WBSettingsSave { background-color: #007bff; color: #fff; }",
-      "#WazeBarSettings button#WBSettingsSave:hover { background-color: #0056b3; }",
-      "#WazeBarSettings button#WBSettingsCancel { background-color: #6c757d; color: #fff; }",
-      "#WazeBarSettings button#WBSettingsCancel:hover { background-color: #5a6268; }",
-      "#WazeBarSettings h4 { margin-top: 5px; margin-bottom: 5px; font-size: 16px; line-height: 1.2; }",
-      "#WazeBarSettings #customLinksSection { margin-top: 5px; }",
-      "#WazeBarSettings #customLinksSection div { margin-bottom: 0; }",
-      "#WazeBarSettings label { display: inline; }",
-      // Inline element alignment for the settings inputs
-      "#WazeBarSettings .flex-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }",
-
-      // Flex container holds the flex columns on the Main Setting Menu diolog
-      ".flex-container { display: flex; align-items: flex-start; width: 100%; gap: 10px; box-sizing: border-box;}",
-      ".flex-column { padding: 10px; position: relative; box-sizing: border-box; border: 1px solid #ccc; background-color: #f9f9f9; min-width: 280px; flex: 1 1 auto; min-height: 540px; }",
-      ".left-column::after { content: ''; position: absolute; top: 0; right: 0; width: 1px; height: 100%; background-color: #ccc; }",
-      ".right-column::before { content: ''; position: absolute; top: 0; left: 0; width: 1px; height: 100%; background-color: #ccc; }",
-
-      // Color Picker styling for Forumn and Wiki links
-      "#colorPickerForumFont, #colorPickerWikiFont { display: inline-block; width: 60px; height: 40px; border: 1px solid #000000; padding: 3px; border-radius: 4px; }",
-
-      // Unread messages popup delay styling
-      ".WazeBarUnread { position: absolute; background: white; border: 1px solid rgba(0, 0, 0, 0.2); padding: 10px; box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2); z-index: 100; }",
-      ".WazeBarUnreadList { max-height: 150px; overflow-y: auto; }",
-
-      // State rows styling
-      ".state-row { display: flex; align-items: center; }",
-      ".state-row div { padding: 4px 4px; }",
-      ".checkbox-column { display: flex; justify-content: center; align-items: center; }",
-      // State Table header styling
-      ".state-header { display: flex; align-items: center; background: #f1f1f1; font-weight: bold; }",
-      ".state-header div { padding: 6px; }",
-      // State Flex-box for the table
-      ".state-column { flex: 3; }",
-      ".checkbox-column { flex: 1; }",
-
-      // Horizontal rule styling
-      "hr { border: none; border-top: 1px solid #ccc; margin: 10px 0 0 0; width: calc(100% - 16px); }",
-
-      // Additional styles for Custom Links section inputs to match Favorites section inputs
-      "#WazeBarCustomURL, #WazeBarCustomText, #WazeBarAddCustomLink { box-sizing: border-box; width: 100%; margin: 0; }",
-      "#WazeBarCustomURL, #WazeBarCustomText { height: 28px; border: 1px solid #000000; padding: 8px; border-radius: 4px; margin-bottom: 3px; }",
-      "#WazeBarAddCustomLink { padding: 8px 0; font-size: 1rem; background-color: #8BC34A; color: white; border: 2px solid #8BC34A; border-radius: 5px; cursor: pointer; transition: background-color 0.3s ease, border-color 0.3s ease; }",
-      "#WazeBarAddCustomLink:hover { background-color: #689F38; border-color: #689F38; }",
-
-      // Custom List link styling
-      "#WazeBarCustomLinksList { list-style: none; padding: 0; margin: 0; font-family: Arial, sans-serif; }",
-      ".custom-item { position: relative; padding: 6px 10px; margin: 8px 0; background: linear-gradient(to right, #f9f9f9, #eaeaea); border-radius: 10px; display: flex; justify-content: space-between; align-items: center; width: 100%; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); transition: background 0.3s ease, transform 0.3s ease; border: 1px solid #ddd; }",
-      ".custom-item a { flex-grow: 1; text-decoration: none; color: #555; font-weight: 500; }",
-      ".custom-item i { cursor: pointer; color: #f56a6a; transition: color 0.3s ease; }",
-      ".custom-item:hover { background: #f0f0f0; transform: translateY(-2px); }",
-      ".custom-item i:hover { color: #e84141; }",
-
-      // Export/Import Section Styling
-      ".flex-row { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }",
-      ".export-button, .import-button { font-size: 1.5rem; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s ease, transform 0.3s ease; }",
-      ".export-button:hover, .import-button:hover { background-color: #0056b3; transform: scale(1.05); }",
-      "#txtWazebarSettings, #txtWazebarImportSettings { width: 100%; height: auto; min-height: 100px; max-height: 500px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; box-sizing: border-box; resize: vertical; }",
-
-      // Ensure textareas align properly in flex container
-      ".flex-row textarea { flex-grow: 0; }",
-
-      // Adjust Export and Import button font sizes for better alignment
-      ".fa-upload, .fa-download { font-size: 1.2rem; padding: 10px; }",
-
-      // NEW styling for checkbox containers to align labels and checkboxes
-      ".checkbox-container { display: flex; align-items: center; margin-bottom: 8px; }",
-      ".checkbox-container input[type='checkbox'] { margin-right: 10px; }",
-
-      // Custom styling for the region dropdown
-      ".styled-select {",
-      "    width: 260px;",
-      "    height: 40px;",
-      "    padding: 8px;",
-      "    font-size: 14px;",
-      "    border: 1px solid #ccc;",
-      "    border-radius: 8px;",
-      "    background-color: #fff;",
-      "    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);",
-      "    -webkit-appearance: none;", // Remove default styling in WebKit browsers
-      "    -moz-appearance: none;", // Remove default styling in Firefox
-      "    appearance: none;", // Remove default browser styling
-      "}",
-      ".styled-select:focus {",
-      "    border-color: #007bff;", // Change border color when focused
-      "    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);", // Focus shadow
-      "    outline: none;", // Remove default outline
-      "}",
-    ].join(" ");
-
-    // Remove the previous styles if they exist
-    $("#WazeBarStyles").remove();
-
-    // Append the new styles
-    $('<style type="text/css" id="WazeBarStyles">' + css + "</style>").appendTo("head");
-  }
-    */
-
-  function injectCss() {
-    var css = [
-      // General text styling for WazeBar elements
-      ".WazeBarText { display: inline; padding-right: 5px; margin-left: 5px; border-right: thin solid grey; font-size: " + WazeBarSettings.BarFontSize + "px; }",
+      ".WazeBarText.WazeBarServerUpdate {}",
       ".WazeBarIcon { display: inline; margin-left: 5px; cursor: pointer; font-size: " + WazeBarSettings.BarFontSize + "px; }",
 
       // WazeBar styling
@@ -1398,18 +1259,15 @@ var curr_ver = GM_info.script.version;
       "#WazeBarAddFavorite { padding: 8px 12px; font-size: 1rem; background-color: #8BC34A; color: white; border: 2px solid #8BC34A; border-radius: 5px; cursor: pointer; box-sizing: border-box; transition: background-color 0.3s ease, border-color 0.3s ease; }",
       "#WazeBarAddFavorite:hover { background-color: #689F38; border-color: #689F38; }",
 
-      // WazeBar Forum / Wiki / Current State Forum & Wiki links styling
-      ".WazeBarText.WazeBarWikiItem a { color: " + WazeBarSettings.WikiFontColor + "; }",
-      ".WazeBarText.WazeBarForumItem a { color: " + WazeBarSettings.ForumFontColor + "; }",
-      ".WazeBarText.WazeBarCurrState a { color: #FF0000; }",
-
       // Unread messages popup delay styling
-      ".WazeBarUnread { position: absolute; background: white; border: 1px solid rgba(0, 0, 0, 0.2); padding: 10px; box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2); z-index: 100; }",
-      ".WazeBarUnreadList { max-height: 500px; overflow-y: auto; list-style: none; padding: 0; margin: 0; }",
-      ".unread-item { position: relative; padding: 8px 12px; margin: 4px 0; background: #f1f1f1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }",
-      ".unread-item a { flex-grow: 1; text-decoration: none; color: #333; }",
-      ".unread-item i { cursor: pointer; color: #c00; }",
-      ".unread-item:hover { background: #e1e1e1; }",
+    ".WazeBarUnread { max-height: 500px; z-index: 100; overflow: auto; display: flex; position: absolute; background-color: #f9f9f9; min-width: 200px; box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2); margin-top: 2px; padding: 10px; }",
+     // ".WazeBarUnread {max-height: 500px; z-index: 100; overflow: auto; position: absolute; background-color: #f9f9f9; border: 1px solid rgba(0, 0, 0, 0.2); padding: 10px; box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2); }",
+      
+      ".WazeBarUnreadList {   list-style: none; padding: 0; margin: 0; }",
+      ".WazeBarUnreadList.unread-item { position: relative; padding: 8px 12px; margin: 4px 0; background: #f1f1f1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }",
+      ".WazeBarUnreadList.unread-item a { flex-grow: 1; text-decoration: none; color: #333; }",
+      ".WazeBarUnreadList.unread-item i { cursor: pointer; color: #c00; }",
+      ".WazeBarUnreadList.unread-item:hover { background: #e1e1e1; }",
 
       // Main Setting Menu diolog
       "#WazeBarSettings { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; border: 3px solid #000; border-radius: 10px; padding: 16px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); overflow: visible; }",
@@ -1480,24 +1338,8 @@ var curr_ver = GM_info.script.version;
       ".checkbox-container input[type='checkbox'] { margin-right: 10px; }",
 
       // Custom styling for the region dropdown
-      ".styled-select {",
-      "    width: 260px;",
-      "    height: 40px;",
-      "    padding: 8px;",
-      "    font-size: 14px;",
-      "    border: 1px solid #ccc;",
-      "    border-radius: 8px;",
-      "    background-color: #fff;",
-      "    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);",
-      "    -webkit-appearance: none;", // Remove default styling in WebKit browsers
-      "    -moz-appearance: none;", // Remove default styling in Firefox
-      "    appearance: none;", // Remove default browser styling
-      "}",
-      ".styled-select:focus {",
-      "    border-color: #007bff;", // Change border color when focused
-      "    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);", // Focus shadow
-      "    outline: none;", // Remove default outline
-      "}",
+      ".styled-select { width: 260px; height: 40px; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; background-color: #fff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }",
+      ".styled-select:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); outline: none; }",
     ].join(" ");
 
     // Remove the previous styles if they exist
@@ -1528,6 +1370,7 @@ var curr_ver = GM_info.script.version;
 
     var defaultSettings = {
       forumInterval: 2,
+      forumHistory: 7,
       scriptsForum: false,
       header: { region: {} },
       USSMForum: false,
@@ -1586,6 +1429,7 @@ var curr_ver = GM_info.script.version;
     WazeBarSettings.ForumFontColor = $("#colorPickerForumFont").val();
     WazeBarSettings.WikiFontColor = $("#colorPickerWikiFont").val();
     WazeBarSettings.forumInterval = $("#forumInterval").val();
+    WazeBarSettings.forumHistory = $("#forumHistory").val();
     WazeBarSettings.NAServerUpdate = isChecked("NAServerUpdateSetting");
     WazeBarSettings.ROWServerUpdate = isChecked("ROWServerUpdateSetting");
     WazeBarSettings.BarFontSize = $("#WazeBarFontSize").val();
@@ -1599,10 +1443,25 @@ var curr_ver = GM_info.script.version;
     }
   }
 
+  function formatDate(date) {
+    const day = date.getDate();
+    const month = date.getMonth();
+    const year = date.getFullYear();
+
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+
+    return `${year}-${month}-${day} ${hours}:${minutes} ${ampm}`;
+  }
+
   function SaveSettings() {
     if (localStorage) {
       var localsettings = {
         forumInterval: WazeBarSettings.forumInterval,
+        forumHistory: WazeBarSettings.forumHistory,
         scriptsForum: WazeBarSettings.scriptsForum,
         header: WazeBarSettings.header,
         USSMForum: WazeBarSettings.USSMForum,
