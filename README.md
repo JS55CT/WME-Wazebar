@@ -23,12 +23,12 @@
 
 ## Description
 
-**WME Wazebar** is a userscript for the Waze Map Editor (WME) that provides a convenience bar at the top of the editor. This bar offers quick access to the Waze forum, and wiki links, enhancing productivity for WME users.
+**WME Wazebar** is a userscript for the Waze Map Editor (WME) that provides a convenience bar at the top of the editor. This bar offers quick access to the Waze forum and wiki links, enhancing productivity for WME users.
 
 ## Features
 
 - Display a bar at the top of the WME.
-- Quick access to forum, and wiki links.
+- Quick access to forum and wiki links.
 - Customize bar settings, including font size and colors.
 - Add and manage favorites and custom links.
 - Monitor and display unread forum posts.
@@ -37,7 +37,7 @@
 ## Installation
 
 1. Install a userscript manager like [Tampermonkey](https://www.tampermonkey.net/) or [Greasemonkey](https://www.greasespot.net/).
-2. Visit [WME Wazebar on Greasy Fork](https://greasyfork.org/users/30701-justins83-waze).
+2. Visit [WME Wazebar on Greasy Fork](https://greasyfork.org/en/scripts/27604-wme-wazebar).
 3. Click the "Install" button.
 
 ## Usage
@@ -94,5 +94,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 **JustinS83**  
 [GitHub Profile](https://github.com/JustinS83)
+
+---
 
 See the [forum thread](https://www.waze.com/forum/viewtopic.php?f=819&t=219816) for details.
