@@ -283,10 +283,9 @@ var curr_ver = GM_info.script.version;
     $("#forumInterval")[0].value = WazeBarSettings?.forumInterval !== undefined ? WazeBarSettings.forumInterval : defaultSettings.forumInterval;
     $("#forumHistory")[0].value = WazeBarSettings?.forumHistory !== undefined ? WazeBarSettings.forumHistory : defaultSettings.forumHistory;
     $("#WazeBarFontSize")[0].value = WazeBarSettings?.BarFontSize !== undefined ? WazeBarSettings.BarFontSize : defaultSettings.BarFontSize;
-    $("#WazeBarUnreadPopupDelay")[0].value = WazeBarSettings?.UnreadPopupDelay !== undefined ? WazeBarSettings.UnreadPopupDelay : defaultSettings.UnreadPopupDelay;
     $("#colorPickerForumFont").val(WazeBarSettings?.ForumFontColor !== undefined ? WazeBarSettings.ForumFontColor : defaultSettings.ForumFontColor);
     $("#colorPickerWikiFont").val(WazeBarSettings?.WikiFontColor !== undefined ? WazeBarSettings.WikiFontColor : defaultSettings.WikiFontColor);
-
+    serializeSettings();
     LoadCustomLinks();
   }
 
@@ -442,30 +441,19 @@ var curr_ver = GM_info.script.version;
           }
         }
 
-        function validateLeftTopPosition(parentID) {
-          const element = $("#" + parentID);
-          if (element.length > 0) {
-              const position = element.position();
-              if (position) {
-                  return `left:${position.left}px;`;
-              }
-          }
-          return "";
-      }
-
         if (count > 0) {
           $("#" + parentID + " a").append(`
-                    <span style='color:red;font-weight:bold;' id='${spanID}'> 
-                    (${count})
-                    <div class='WazeBarUnread' id='WazeBarUnread${spanID}' style='visibility:hidden;
-                        animation: ${WazeBarSettings.UnreadPopupDelay}s fadeIn; animation-fill-mode: forwards;
-                        left:${$("#" + parentID).position().left}px;
-                        top:${parseInt($("#" + parentID).height()) + forumUnreadOffset}px;'>
-                        <ul class='WazeBarUnreadList' id='WazeBarUnreadList${spanID}'>
-                        </ul>
-                    </div>
-                    </span>
-                `);
+                  <span style='color:red;font-weight:bold;' id='${spanID}'> 
+                  (${count})
+                  <div class='WazeBarUnread' id='WazeBarUnread${spanID}' style='visibility:hidden;
+                      animation-fill-mode: forwards;
+                      left:${$("#" + parentID).position().left}px;
+                      top:${parseInt($("#" + parentID).height()) + forumUnreadOffset}px;'>
+                      <ul class='WazeBarUnreadList' id='WazeBarUnreadList${spanID}'>
+                      </ul>
+                  </div>
+                  </span>
+              `);
 
           $("#WazeBarUnreadList" + spanID).html(links);
 
@@ -623,10 +611,10 @@ var curr_ver = GM_info.script.version;
         "<label for='colorPickerWikiFont'>Wiki Links Color</label>",
         "</div>",
         // Unread popup delay
-        "<div style='display: flex; align-items: center; gap: 8px;'>",
-        "<input type='number' id='WazeBarUnreadPopupDelay' min='0' style='width: 60px;' value='" + WazeBarSettings.UnreadPopupDelay + "'/>",
-        "<label for='WazeBarUnreadPopupDelay'>Unread popup delay (s)</label>",
-        "</div>",
+        //"<div style='display: flex; align-items: center; gap: 8px;'>",
+        //"<input type='number' id='WazeBarUnreadPopupDelay' min='0' style='width: 60px;' value='" + WazeBarSettings.UnreadPopupDelay + "'/>",
+        //"<label for='WazeBarUnreadPopupDelay'>Unread popup delay (s)</label>",
+        //"</div>",
         // Forum check frequency
         "<div style='display: flex; align-items: center; gap: 8px;'>",
         "<input type='number' id='forumInterval' min='1' style='width: 60px;' value='" + WazeBarSettings.forumInterval + "'/>",
@@ -699,7 +687,6 @@ var curr_ver = GM_info.script.version;
         "</div>",
 
         // Start of the Region Dropdown and State check boxes
-        //"Region " + BuildRegionDropdown(),
         BuildRegionDropdown(),
         "<div id='WBStates' style='margin-top: 12px;'></div>",
         "</div>",
@@ -739,10 +726,6 @@ var curr_ver = GM_info.script.version;
       $("#WazeMap").append($section);
     }
 
-    $("#WazeBarUnreadPopupDelay").keypress(function (event) {
-      if (!((event.which >= 48 && event.which <= 57) || (event.which == 46 && (this.value.match(/\./g) || []).length == 0))) event.preventDefault();
-    });
-
     LoadCustomLinks();
     serializeSettings(); // Load the current JSON settings into the Export Text Box
 
@@ -764,10 +747,15 @@ var curr_ver = GM_info.script.version;
       }
     });
 
+    // Cancel button logic
     $("#WBSettingsCancel").click(function () {
       LoadSettingsObj();
       LoadSettingsInterface();
-      SelectedRegionChanged();
+      var regionValue = $("#WBRegions").val();
+      // Check if #WBRegions has a selected value and call SelectedRegionChanged() accordingly
+      if (regionValue !== "" && regionValue !== null) {
+        SelectedRegionChanged();
+      }
       BuildWazebar();
       injectCss();
       $("#WazeBarSettings").fadeOut();
@@ -1004,7 +992,6 @@ var curr_ver = GM_info.script.version;
         "</select>",
       ].join(" ")
     );
-
     return $places.html();
   }
 
@@ -1330,7 +1317,7 @@ var curr_ver = GM_info.script.version;
 
       // Flex container holds the flex columns on the Main Setting Menu diolog
       ".flex-container { display: flex; align-items: flex-start; width: 100%; gap: 8px; box-sizing: border-box;}",
-      ".flex-column { padding: 8px; position: relative; box-sizing: border-box; border: 1px solid #ccc; background-color: #f9f9f9; min-width: 200px;  max-width: 250px; flex: 1 1 auto; min-height: 570px; }",
+      ".flex-column { padding: 8px; position: relative; box-sizing: border-box; border: 1px solid #ccc; background-color: #f9f9f9; min-width: 200px;  max-width: 250px; flex: 1 1 auto; min-height: 510px; }",
       ".left-column::after { content: ''; position: absolute; top: 0; right: 0; width: 1px; height: 100%; background-color: #ccc; }",
       ".right-column::before { content: ''; position: absolute; top: 0; left: 0; width: 1px; height: 100%; background-color: #ccc; }",
 
@@ -1382,7 +1369,7 @@ var curr_ver = GM_info.script.version;
       ".checkbox-container input[type='checkbox'] { margin-right: 8px; }",
 
       // Custom styling for the region dropdown
-      ".styled-select { width: 220px; height: 40px; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; background-color: #fff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }",
+      ".styled-select { width: 220px; font-size: 14px; line-height: 0.5; height: 30px; padding: 1px; border: 1px solid #ccc; border-radius: 6px; background-color: #fff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }",
       ".styled-select:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); outline: none; }",
     ].join(" ");
 
@@ -1433,7 +1420,6 @@ var curr_ver = GM_info.script.version;
     WikiFontColor: "#32CD32",
     BarFontSize: 13,
     CustomLinks: [],
-    UnreadPopupDelay: 0,
     ROWServerUpdate: false,
   };
 
@@ -1477,10 +1463,6 @@ var curr_ver = GM_info.script.version;
     WazeBarSettings.NAServerUpdate = isChecked("NAServerUpdateSetting");
     WazeBarSettings.ROWServerUpdate = isChecked("ROWServerUpdateSetting");
     WazeBarSettings.BarFontSize = $("#WazeBarFontSize").val();
-    if ($("#WazeBarUnreadPopupDelay").val().trim() == "") {
-      $("#WazeBarUnreadPopupDelay").val(0);
-    }
-    WazeBarSettings.UnreadPopupDelay = $("#WazeBarUnreadPopupDelay").val();
     if (WazeBarSettings.BarFontSize < 8) {
       WazeBarSettings.BarFontSize = 8;
       $("#WazeBarFontSize").val(8);
@@ -1519,7 +1501,6 @@ var curr_ver = GM_info.script.version;
         WikiFontColor: WazeBarSettings.WikiFontColor,
         BarFontSize: WazeBarSettings.BarFontSize,
         CustomLinks: WazeBarSettings.CustomLinks,
-        UnreadPopupDelay: WazeBarSettings.UnreadPopupDelay,
         ROWServerUpdate: WazeBarSettings.ROWServerUpdate,
       };
       localStorage.setItem("Wazebar_Settings", JSON.stringify(localsettings));
