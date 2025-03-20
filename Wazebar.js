@@ -173,11 +173,11 @@
         "</div>",
         "</div>",
         // Other forum links
-        WazeBarSettings.WMEBetaForum ? '<div class="WazeBarText WazeBarForumItem" id="WMEBetaForum"><a href="' + location.origin + '/discuss/c/editors/beta-community/4088" ' + LoadNewTab() + ">WME Beta</a></div>" : "",
-        WazeBarSettings.scriptsForum ? '<div class="WazeBarText WazeBarForumItem" id="Scripts"><a href="' + location.origin + '/discuss/c/editors/addons-extensions-and-scripts/3984" ' + LoadNewTab() + ">Scripts</a></div>" : "",
-        WazeBarSettings.USSMForum ? '<div class="WazeBarText WazeBarForumItem" id="USSMForum"><a href="' + location.origin + '/discuss/c/editors/united-states/us-state-managers/4890" ' + LoadNewTab() + ">US SM</a></div>" : "",
-        WazeBarSettings.USChampForum ? '<div class="WazeBarText WazeBarForumItem" id="USChampForum"><a href="' + location.origin + '/discuss/c/editors/united-states/us-waze-champs/4893" ' + LoadNewTab() + ">US Champ</a></div>" : "",
-        WazeBarSettings.USWikiForum ? '<div class="WazeBarText WazeBarForumItem" id="USWikiForum"><a href="' + location.origin + '/discuss/c/editors/united-states/us-wiki-discussion/4894" ' + LoadNewTab() + ">US Wiki</a></div>" : "",
+        WazeBarSettings.WMEBetaForum ? '<div class="WazeBarText WazeBarForumItem" id="WMEBetaForum"><a href="https://www.waze.com/discuss/c/editors/beta-community/4088" ' + LoadNewTab() + ">WME Beta</a></div>" : "",
+        WazeBarSettings.scriptsForum ? '<div class="WazeBarText WazeBarForumItem" id="Scripts"><a href="https://www.waze.com/discuss/c/editors/addons-extensions-and-scripts/3984" ' + LoadNewTab() + ">Scripts</a></div>" : "",
+        WazeBarSettings.USSMForum ? '<div class="WazeBarText WazeBarForumItem" id="USSMForum"><a href="https://www.waze.com/discuss/c/editors/united-states/us-state-managers/4890" ' + LoadNewTab() + ">US SM</a></div>" : "",
+        WazeBarSettings.USChampForum ? '<div class="WazeBarText WazeBarForumItem" id="USChampForum"><a href="https://www.waze.com/discuss/c/editors/united-states/us-waze-champs/4893" ' + LoadNewTab() + ">US Champ</a></div>" : "",
+        WazeBarSettings.USWikiForum ? '<div class="WazeBarText WazeBarForumItem" id="USWikiForum"><a href="https://www.waze.com/discuss/c/editors/united-states/us-wiki-discussion/4894" ' + LoadNewTab() + ">US Wiki</a></div>" : "",
         BuildStateForumEntries(),
         BuildStateUnlockEntries(),
         BuildCustomEntries(),
@@ -381,14 +381,14 @@
 
   function checkForums() {
     if (debug) console.log(`${SCRIPT_NAME}: checkForums() called`);
-    if (WazeBarSettings.WMEBetaForum) checkUnreadTopics(location.origin + "/discuss/c/editors/beta-community/4088", "WMEBetaForum", "WMEBetaForumCount");
-    if (WazeBarSettings.scriptsForum) checkUnreadTopics(location.origin + "/discuss/c/editors/addons-extensions-and-scripts/3984", "Scripts", "ScriptsCount");
-    if (WazeBarSettings.USSMForum) checkUnreadTopics(location.origin + "/discuss/c/editors/united-states/us-state-managers/4890", "USSMForum", "USSMForumCount");
-    if (WazeBarSettings.USChampForum) checkUnreadTopics(location.origin + "/discuss/c/editors/united-states/us-waze-champs/4893", "USChampForum", "USChampForumCount");
-    if (WazeBarSettings.USWikiForum) checkUnreadTopics(location.origin + "/discuss/c/editors/united-states/us-wiki-discussion/4894", "USWikiForum", "USWikiForumCount");
+    if (WazeBarSettings.WMEBetaForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/beta-community/4088", "WMEBetaForum", "WMEBetaForumCount");
+    if (WazeBarSettings.scriptsForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/addons-extensions-and-scripts/3984", "Scripts", "ScriptsCount");
+    if (WazeBarSettings.USSMForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/united-states/us-state-managers/4890", "USSMForum", "USSMForumCount");
+    if (WazeBarSettings.USChampForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/united-states/us-waze-champs/4893", "USChampForum", "USChampForumCount");
+    if (WazeBarSettings.USWikiForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/united-states/us-wiki-discussion/4894", "USWikiForum", "USWikiForumCount");
 
     Object.keys(WazeBarSettings.header).forEach(function (state, index) {
-      if (WazeBarSettings.header[state].forum) checkUnreadTopics(WazeBarSettings.header[state].forum.replace("https://www.waze.com", location.origin), state.replace(" ", "_") + "Forum", state.replace(" ", "_") + "ForumCount");
+      if (WazeBarSettings.header[state].forum) checkUnreadTopics(WazeBarSettings.header[state].forum, state.replace(" ", "_") + "Forum", state.replace(" ", "_") + "ForumCount");
 
       if (WazeBarSettings.header[state].unlock) {
         var url = "https://www.waze.com/discuss/search?q=" + encodeURIComponent(state) + "%20%23united-states%3Aus-unlock-and-update-requests%20order%3Alatest";
@@ -566,7 +566,7 @@
     var stateForums = "";
     Object.keys(WazeBarSettings.header).forEach(function (state) {
       if (WazeBarSettings.header[state].forum)
-        stateForums += '<div class="WazeBarText WazeBarForumItem" id="' + state.replace(" ", "_") + 'Forum"><a href="' + WazeBarSettings.header[state].forum.replace("https://www.waze.com", location.origin) + '" ' + LoadNewTab() + ">" + WazeBarSettings.header[state].abbr + "</a></div>";
+        stateForums += '<div class="WazeBarText WazeBarForumItem" id="' + state.replace(" ", "_") + 'Forum"><a href="' + WazeBarSettings.header[state].forum + '" ' + LoadNewTab() + ">" + WazeBarSettings.header[state].abbr + "</a></div>";
     });
     return stateForums;
   }
@@ -584,7 +584,7 @@
         if (!currState || !States[currState]) {
           return currentState; // Return an empty string if currState or its corresponding States entry is invalid.
         }
-        currentState += '<div class="WazeBarText WazeBarCurrState" id="' + currState.replace(" ", "_") + 'ForumCurrState"><a href="' + States[currState].forum.replace("https://www.waze.com", location.origin) + '" ' + LoadNewTab() + ">" + States[currState].abbr + "</a></div>";
+        currentState += '<div class="WazeBarText WazeBarCurrState" id="' + currState.replace(" ", "_") + 'ForumCurrState"><a href="' + States[currState].forum + '" ' + LoadNewTab() + ">" + States[currState].abbr + "</a></div>";
         currentState += '<div class="WazeBarText WazeBarCurrState"><a href="' + States[currState].wiki + '" target="_blank">' + States[currState].abbr + " Wiki</a></div>";
       }
     }
@@ -602,7 +602,7 @@
             WazeBarSettings.CustomLinks[i].text.replace(/\s/g, "") +
             i +
             'Forum"><a href="' +
-            WazeBarSettings.CustomLinks[i].href.replace("https://www.waze.com", location.origin) +
+            WazeBarSettings.CustomLinks[i].href +
             '" ' +
             LoadNewTab() +
             ">" +
@@ -776,7 +776,7 @@
 
         // Bottom Div section with WazeBar Forum Link, Save and Cancel buttons
         "<div style='display: flex; justify-content: space-between; margin-top: 8px;'>",
-        "<a href='" + location.origin + "/discuss/t/script-wazebar/208863' target='_blank'>Waze Bar Forum Thread</a>",
+        "<a href='https://www.waze.com/discuss/t/script-wazebar/208863' target='_blank'>Waze Bar Forum Thread</a>",
         "<span>Version: " + SCRIPT_VERSION + "</span>",
         "<div>",
         "<button id='WBSettingsSave'>Save</button>",
