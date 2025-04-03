@@ -1,6 +1,6 @@
 # WME Wazebar
 
-![Version](https://img.shields.io/badge/version-2024.10.05.02-blue)
+![Version](https://img.shields.io/badge/version-2025.04.03.00-blue)
 
 ## Table of Contents
 
