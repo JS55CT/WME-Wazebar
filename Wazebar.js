@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Wazebar
 // @namespace    https://greasyfork.org/users/30701-justins83-waze
-// @version      2025.04.03.00
+// @version      2025.04.04.00
 // @description  Displays a bar at the top of the editor that displays inbox, forum & wiki links
 // @author       JustinS83
 // @include      https://beta.waze.com/*
@@ -792,6 +792,8 @@
       $("#WazeMap").append($section);
     }
 
+    // Apply draggable functionality to the #WazeBarSettings div
+    makeDialogMovable(document.getElementById('WazeBarSettings'));
     LoadCustomLinks();
     serializeSettings(); // Load the current JSON settings into the Export Text Box
 
@@ -914,6 +916,45 @@
     });
 
     $("#WazeBarSettings").hide(); // Ensure the settings dialog is initially hidden
+  }
+
+  function makeDialogMovable(element) {
+    var pos = { top: 0, left: 0, x: 0, y: 0 };
+  
+    const mouseDownHandler = function (e) {
+      // Set the cursor
+      element.style.cursor = 'grabbing';
+  
+      // Starting position
+      pos = {
+        left: element.offsetLeft,
+        top: element.offsetTop,
+        x: e.clientX,
+        y: e.clientY,
+      };
+  
+      document.addEventListener('mousemove', mouseMoveHandler);
+      document.addEventListener('mouseup', mouseUpHandler);
+    };
+  
+    const mouseMoveHandler = function (e) {
+      const dx = e.clientX - pos.x;
+      const dy = e.clientY - pos.y;
+  
+      // Update the element's position
+      element.style.left = `${pos.left + dx}px`;
+      element.style.top = `${pos.top + dy}px`;
+    };
+  
+    const mouseUpHandler = function () {
+      // Remove cursors and event listeners
+      element.style.cursor = 'move';
+      document.removeEventListener('mousemove', mouseMoveHandler);
+      document.removeEventListener('mouseup', mouseUpHandler);
+    };
+  
+    // Apply the mouse down handler to start the drag
+    element.addEventListener('mousedown', mouseDownHandler);
   }
 
   function SelectedRegionChanged() {
@@ -1393,7 +1434,7 @@
       ".WazeBarUnreadList.unread-item:hover { background: #33CCFF; }",
 
       // Main Setting Menu diolog
-      "#WazeBarSettings { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; border: 3px solid #000; border-radius: 5%; padding: 12px; overflow: visible; color: #000000;}",
+      "#WazeBarSettings {cursor: move; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; border: 3px solid #000; border-radius: 5%; padding: 12px; color: #000000;}", 
       "#WazeBarSettings input[type='number'], #WazeBarSettings input[type='text'], #WazeBarSettings textarea { border: 1px solid #000; padding: 5px; border-radius: 6px; margin-bottom: 0px; background-color: white; color: #000000; }",
       "#WazeBarSettings button { padding: 8px 12px; border: none; border-radius: 25px; cursor: pointer; }",
       "#WazeBarSettings button#WBSettingsSave { background-color: #007bff; color: #fff; }",
@@ -1408,8 +1449,8 @@
       "#WazeBarSettings .flex-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }",
 
       // Flex container holds the flex columns on the Main Setting Menu diolog
-      ".flex-container { display: flex; align-items: flex-start; width: 100%; gap: 8px; box-sizing: border-box;}",
-      ".flex-column { padding: 8px; position: relative; box-sizing: border-box; border: 1px solid #ccc; background-color: #f9f9f9; min-width: 200px;  max-width: 250px; flex: 1 1 auto; min-height: 550px; border-radius: 1%;}",
+      ".flex-container { display: flex; align-items: flex-start; width: 100%; gap: 8px; box-sizing: border-box; max-height: 550px; overflow-y: auto;}",
+      ".flex-column { padding: 8px; position: relative; box-sizing: border-box; border: 1px solid #ccc; background-color: #f9f9f9; min-width: 200px;  max-width: 300px; flex: 1 1 auto; min-height: 550px; border-radius: 1%;}",
       ".left-column::after { content: ''; position: absolute; top: 0; right: 0; width: 0px; height: 100%; background-color: #ccc; }",
       ".right-column::before { content: ''; position: absolute; top: 0; left: 0; width: 0px; height: 100%; background-color: #ccc; }",
 
@@ -1439,7 +1480,7 @@
       // Custom List link styling
       "#WazeBarCustomLinksList { list-style: none; padding: 0; margin: 0;  }",
       ".custom-item { position: relative; padding: 4px; margin: 4px 0;  background: #f1f1f1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; width: 100%; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); transition: background 0.3s ease, transform 0.3s ease; border: 1px solid #ddd; }",
-      ".custom-item a { flex-grow: 1; text-decoration: none; color: #555555; }",
+      ".custom-item a { display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; color: #555555; }", //{ flex-grow: 1; text-decoration: none; color: #555555; }
       ".custom-item a:visited { color: #555555; }",
       ".custom-item i { cursor: pointer; color: #f56a6a;  }",
       ".custom-item:hover { background: #33CCFF;  }",
