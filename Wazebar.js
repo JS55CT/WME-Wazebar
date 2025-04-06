@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Wazebar
 // @namespace    https://greasyfork.org/users/30701-justins83-waze
-// @version      2025.04.04.00
+// @version      2025.04.06.00
 // @description  Displays a bar at the top of the editor that displays inbox, forum & wiki links
 // @author       JustinS83
 // @include      https://beta.waze.com/*
@@ -174,7 +174,7 @@
         "</div>",
         // Other forum links
         WazeBarSettings.WMEBetaForum ? '<div class="WazeBarText WazeBarForumItem" id="WMEBetaForum"><a href="https://www.waze.com/discuss/c/editors/beta-community/4088" ' + LoadNewTab() + ">WME Beta</a></div>" : "",
-        WazeBarSettings.scriptsForum ? '<div class="WazeBarText WazeBarForumItem" id="Scripts"><a href="https://www.waze.com/discuss/c/editors/addons-extensions-and-scripts/3984" ' + LoadNewTab() + ">Scripts</a></div>" : "",
+        WazeBarSettings.scriptsForum ? '<div class="WazeBarText WazeBarForumItem" id="ScriptsForum"><a href="https://www.waze.com/discuss/c/editors/addons-extensions-and-scripts/3984" ' + LoadNewTab() + ">Scripts</a></div>" : "",
         WazeBarSettings.USSMForum ? '<div class="WazeBarText WazeBarForumItem" id="USSMForum"><a href="https://www.waze.com/discuss/c/editors/united-states/us-state-managers/4890" ' + LoadNewTab() + ">US SM</a></div>" : "",
         WazeBarSettings.USChampForum ? '<div class="WazeBarText WazeBarForumItem" id="USChampForum"><a href="https://www.waze.com/discuss/c/editors/united-states/us-waze-champs/4893" ' + LoadNewTab() + ">US Champ</a></div>" : "",
         WazeBarSettings.USWikiForum ? '<div class="WazeBarText WazeBarForumItem" id="USWikiForum"><a href="https://www.waze.com/discuss/c/editors/united-states/us-wiki-discussion/4894" ' + LoadNewTab() + ">US Wiki</a></div>" : "",
@@ -189,15 +189,31 @@
       ].join("")
     );
 
-    if (forumPage) {
-      $(".d-header").prepend($Wazebar);
-      $("#Wazebar").css({
-        "background-color": "white",
-        width: "100%",
-      });
-    } else {
-      $(".app.container-fluid").before($Wazebar);
+    function prependWazebarToHeader(retries = 5, interval = 200) {
+      if (forumPage) {
+        const attemptPrepend = () => {
+          const header = $(".d-header");
+          if (header.length) {
+            header.prepend($Wazebar);
+            $("#Wazebar").css({
+              "background-color": "white",
+              width: "100%",
+            });
+          } else if (retries > 0) {
+            retries--;
+            setTimeout(attemptPrepend, interval);
+          } else {
+            console.warn("Warning: .d-header not found after multiple attempts.");
+          }
+        };
+    
+        attemptPrepend();
+      } else {
+        $(".app.container-fluid").before($Wazebar);
+      }
     }
+    
+    prependWazebarToHeader();
 
     checkForums();
     StartIntervals();
@@ -340,36 +356,36 @@
     if (debug) console.log(`${SCRIPT_NAME}: LoadCustomLinks() called`);
     const customList = $("#WazeBarCustomLinksList");
     customList.empty(); // Clear the list
-
-    // For each custom link, append a structured item
+  
+    // Append structured items for each custom link
     WazeBarSettings.CustomLinks.forEach((customLink, index) => {
       const listItem = $(`
-                <li class="custom-item">
-                    <a href="${customLink.href}" target="_blank">${customLink.text}</a>
-                    <i class="fa fa-times" title="Remove custom link" data-index="${index}"></i>
-                </li>
-            `);
+        <li class="custom-item">
+          <a href="${customLink.href}"${LoadNewTab()}>${customLink.text}</a>
+          <i class="fa fa-times" title="Remove custom link" data-index="${index}"></i>
+        </li>
+      `);
       customList.append(listItem);
     });
-
-    // Use event delegation to handle the removal of items
-    customList.on("click", ".fa-times", function () {
+  
+    // Handle removal using event delegation
+    customList.off("click", ".fa-times").on("click", ".fa-times", function () {
       const index = $(this).data("index");
-      WazeBarSettings.CustomLinks.splice(index, 1);
-      SaveSettings();
-      serializeSettings();
-      LoadCustomLinks();
-      BuildWazebar();
+      if (index >= 0 && index < WazeBarSettings.CustomLinks.length) {
+        WazeBarSettings.CustomLinks.splice(index, 1);
+        serializeSettings();
+        LoadCustomLinks();
+        BuildWazebar();
+      }
     });
-
-    // Add close click functionality, ensure proper index management
-    $('[id^="WazeBarCustomLinksListClose"]').click(function () {
+  
+    // Ensure index management when using close functionality
+    $('[id^="WazeBarCustomLinksListClose"]').off("click").on("click", function () {
       const index = Number(this.id.replace("WazeBarCustomLinksListClose", ""));
       if (index >= 0 && index < WazeBarSettings.CustomLinks.length) {
         WazeBarSettings.CustomLinks.splice(index, 1);
-        SaveSettings();
-        LoadCustomLinks();
         serializeSettings();
+        LoadCustomLinks();
         BuildWazebar();
       }
     });
@@ -382,7 +398,7 @@
   function checkForums() {
     if (debug) console.log(`${SCRIPT_NAME}: checkForums() called`);
     if (WazeBarSettings.WMEBetaForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/beta-community/4088", "WMEBetaForum", "WMEBetaForumCount");
-    if (WazeBarSettings.scriptsForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/addons-extensions-and-scripts/3984", "Scripts", "ScriptsCount");
+    if (WazeBarSettings.scriptsForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/addons-extensions-and-scripts/3984", "ScriptsForum", "ScriptsCount");
     if (WazeBarSettings.USSMForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/united-states/us-state-managers/4890", "USSMForum", "USSMForumCount");
     if (WazeBarSettings.USChampForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/united-states/us-waze-champs/4893", "USChampForum", "USChampForumCount");
     if (WazeBarSettings.USWikiForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/united-states/us-wiki-discussion/4894", "USWikiForum", "USWikiForumCount");
@@ -397,7 +413,7 @@
     });
 
     for (var i = 0; i < WazeBarSettings.CustomLinks.length; i++) {
-      if (WazeBarSettings.CustomLinks[i].href.includes("/discuss")) checkUnreadTopics(WazeBarSettings.CustomLinks[i].href, WazeBarSettings.CustomLinks[i].text.replace(/\s/g, "") + i + "Forum", WazeBarSettings.CustomLinks[i].text.replace(/\s/g, "") + i + "ForumCount");
+      if (WazeBarSettings.CustomLinks[i].href.includes("/discuss/")) checkUnreadTopics(WazeBarSettings.CustomLinks[i].href, WazeBarSettings.CustomLinks[i].text.replace(/\s/g, "") + i + "Forum", WazeBarSettings.CustomLinks[i].text.replace(/\s/g, "") + i + "ForumCount"); // JS55CT TEST
     }
   }
 
@@ -585,7 +601,7 @@
           return currentState; // Return an empty string if currState or its corresponding States entry is invalid.
         }
         currentState += '<div class="WazeBarText WazeBarCurrState" id="' + currState.replace(" ", "_") + 'ForumCurrState"><a href="' + States[currState].forum + '" ' + LoadNewTab() + ">" + States[currState].abbr + "</a></div>";
-        currentState += '<div class="WazeBarText WazeBarCurrState"><a href="' + States[currState].wiki + '" target="_blank">' + States[currState].abbr + " Wiki</a></div>";
+        currentState += '<div class="WazeBarText WazeBarCurrState"><a href="' + States[currState].wiki + '"' + LoadNewTab() + ">" + States[currState].abbr + " Wiki</a></div>";
       }
     }
     return currentState;
@@ -594,9 +610,9 @@
   function BuildCustomEntries() {
     var customList = "";
     if (WazeBarSettings.CustomLinks && WazeBarSettings.CustomLinks.length > 0) {
-      //forum entries first
+      //Categories like Forum Entries & User Profiles
       for (var i = 0; i < WazeBarSettings.CustomLinks.length; i++) {
-        if (WazeBarSettings.CustomLinks[i].href.includes("/discuss/c/")) {
+        if (WazeBarSettings.CustomLinks[i].href.includes("/discuss/c/") || WazeBarSettings.CustomLinks[i].href.includes("/discuss/u/")) {
           customList +=
             '<div class="WazeBarText WazeBarForumItem" id="' +
             WazeBarSettings.CustomLinks[i].text.replace(/\s/g, "") +
@@ -611,12 +627,25 @@
         }
       }
 
-      //wiki entries
-      for (i = 0; i < WazeBarSettings.CustomLinks.length; i++) {
-        if (WazeBarSettings.CustomLinks[i].href.includes("/discuss/t/")) {
-          customList += '<div class="WazeBarText WazeBarWikiItem"><a href="' + WazeBarSettings.CustomLinks[i].href + '" target="_blank">' + WazeBarSettings.CustomLinks[i].text + "</a></div>";
+        for (i = 0; i < WazeBarSettings.CustomLinks.length; i++) {
+          if (
+            WazeBarSettings.CustomLinks[i].href.includes("/discuss/t/") ||
+            WazeBarSettings.CustomLinks[i].href.includes("/discuss/tag/")
+          ) {
+            customList +=
+              '<div class="WazeBarText WazeBarWikiItem" id="' +
+              WazeBarSettings.CustomLinks[i].text.replace(/\s/g, "") +
+              i +
+              'Forum"><a href="' + //'Wiki"><a href="' +
+              WazeBarSettings.CustomLinks[i].href +
+              '" ' +
+              LoadNewTab() +
+              ">" +
+              WazeBarSettings.CustomLinks[i].text +
+              "</a></div>";
+          }
         }
-      }
+
       return customList;
     }
   }
@@ -624,7 +653,16 @@
   function BuildStateWikiEntries() {
     var stateWikis = "";
     Object.keys(WazeBarSettings.header).forEach(function (state) {
-      if (WazeBarSettings.header[state].wiki) stateWikis += '<div class="WazeBarText WazeBarWikiItem"><a href="' + WazeBarSettings.header[state].wiki + '" target="_blank">' + WazeBarSettings.header[state].abbr + " Wiki</a></div>";
+      if (WazeBarSettings.header[state].wiki) {
+        stateWikis += 
+          '<div class="WazeBarText WazeBarWikiItem"><a href="' +
+          WazeBarSettings.header[state].wiki +
+          '"' +
+          LoadNewTab() +
+          ">" +
+          WazeBarSettings.header[state].abbr +
+          " Wiki</a></div>";
+      }
     });
     return stateWikis;
   }
@@ -645,7 +683,16 @@
     var regionWikis = "";
     if (WazeBarSettings.header.region) {
       Object.keys(WazeBarSettings.header.region).forEach(function (region) {
-        if (WazeBarSettings.header.region[region].wiki) regionWikis += '<div class="WazeBarText WazeBarWikiItem"><a href="' + WazeBarSettings.header.region[region].wiki + '" target="_blank">' + WazeBarSettings.header.region[region].abbr + " Wiki</a></div>";
+        if (WazeBarSettings.header.region[region].wiki) {
+          regionWikis += 
+            '<div class="WazeBarText WazeBarWikiItem"><a href="' +
+            WazeBarSettings.header.region[region].wiki +
+            '"' +
+            LoadNewTab() +
+            ">" +
+            WazeBarSettings.header.region[region].abbr +
+            " Wiki</a></div>";
+        }
       });
     }
     return regionWikis;
@@ -662,32 +709,32 @@
 
         // Start of the 1st Flex Column
         "<div class='flex-column left-column'>",
-        "<div style='display: flex; flex-direction: column; gap: 8px;'>",
+        "<div style='display: flex; flex-direction: column; gap: 4px;'>",
         // Font size with default value
-        "<div style='display: flex; align-items: center; gap: 8px;'>",
-        "<input type='number' id='WazeBarFontSize' min='8' max='30' style='width: 50px;' value='" + WazeBarSettings.BarFontSize + "'/>",
+        "<div style='display: flex; align-items: center; gap: 4px;'>",
+        "<input type='number' id='WazeBarFontSize' min='8' max='30' style='width: 50px; height: 20px' value='" + WazeBarSettings.BarFontSize + "'/>",
         "<label for='WazeBarFontSize'>Font size</label>",
         "</div>",
         // Forum font color with default value
-        "<div style='display: flex; align-items: center; gap: 8px;'>",
-        "<input type='color' id='colorPickerForumFont' style='width: 50px;' value='" + WazeBarSettings.ForumFontColor + "'/>",
-        "<label for='colorPickerForumFont'>Forum Links Color</label>",
+        "<div style='display: flex; align-items: center; gap: 4px;'>",
+        "<input type='color' id='colorPickerForumFont' style='width: 50px; height: 25px' value='" + WazeBarSettings.ForumFontColor + "'/>",
+        "<label for='colorPickerForumFont'>Forum link Color</label>",
         "</div>",
         // Wiki font color with default value
-        "<div style='display: flex; align-items: center; gap: 8px;'>",
-        "<input type='color' id='colorPickerWikiFont' style='width: 50px;' value='" + WazeBarSettings.WikiFontColor + "'/>",
-        "<label for='colorPickerWikiFont'>Wiki Links Color</label>",
+        "<div style='display: flex; align-items: center; gap: 4px;'>",
+        "<input type='color' id='colorPickerWikiFont' style='width: 50px; height: 25px' value='" + WazeBarSettings.WikiFontColor + "'/>",
+        "<label for='colorPickerWikiFont'>Wiki link Color</label>",
         "</div>",
 
         // Forum check frequency
-        "<div style='display: flex; align-items: center; gap: 8px;'>",
-        "<input type='number' id='forumInterval' min='1' style='width: 50px;' value='" + WazeBarSettings.forumInterval + "'/>",
-        "<label for='forumInterval'>Forum check frequency (mins)</label>",
+        "<div style='display: flex; align-items: center; gap: 4px;'>",
+        "<input type='number' id='forumInterval' min='1' style='width: 50px; height: 20px' value='" + WazeBarSettings.forumInterval + "'/>",
+        "<label for='forumInterval'>Refresh freq. (mins)</label>",
         "</div>",
         // Forum History
-        "<div style='display: flex; align-items: center; gap: 8px;'>",
-        "<input type='number' id='forumHistory' min='1' style='width: 50px;' value='" + WazeBarSettings.forumHistory + "'/>",
-        "<label for='forumHistory'>Forum History (Days)</label>",
+        "<div style='display: flex; align-items: center; gap: 4px;'>",
+        "<input type='number' id='forumHistory' min='1' style='width: 50px; height: 20px' value='" + WazeBarSettings.forumHistory + "'/>",
+        "<label for='forumHistory'>History (Days)</label>",
         "</div>",
         // Horizontal rule before Custom Links section
         "<hr>",
@@ -695,11 +742,11 @@
         // Export/Import Section
         "<div id='exportImportSection'>",
         "<h4>Export/Import</h4>",
-        "<div class='flex-row' style='align-items: flex-start; gap: 8px;'>",
+        "<div class='flex-row' style='align-items: flex-start; gap: 4px;'>",
         "<button class='export-button fa fa-upload' id='btnWazebarCopySettings' title='Copy Wazebar settings to the clipboard' data-clipboard-target='#txtWazebarSettings'></button>",
         "<textarea readonly id='txtWazebarSettings' placeholder='Copied settings will appear here'></textarea>",
         "</div>",
-        "<div class='flex-row' style='align-items: flex-start; gap: 8px; margin-top: 8px;'>",
+        "<div class='flex-row' style='align-items: flex-start; gap: 4px; margin-top: 8px;'>",
         "<button class='import-button fa fa-download' id='btnWazebarImportSettings' title='Import copied settings'></button>",
         "<textarea id='txtWazebarImportSettings' placeholder='Paste JSON formated settings here to import'></textarea>",
         "</div>",
@@ -836,8 +883,7 @@
     $("#WBSettingsSave").click(function () {
       if (debug) console.log(`${SCRIPT_NAME}: Settings Interface Save button clicked`);
       updateWazeBarSettingsFromUI(); // Step 1: Update settings
-      SaveSettings(); // Step 2: Save settings
-      serializeSettings(); // Step 3: Serialize settings
+      serializeSettings(); // Step 2 & 3: Serialize settings calls Save Settings
       BuildWazebar(); // Step 4: Rebuild the WazeBar
       injectCss(); // Step 5: Inject CSS
       $("#WazeBarSettings").fadeOut(); // Step 6: Hide settings dialog
@@ -900,8 +946,7 @@
     $("#btnWazebarCopySettings").click(function () {
       if (debug) console.log(`${SCRIPT_NAME}: Export/Copy Settings button clicked`);
       updateWazeBarSettingsFromUI(); // Step 1: Update settings
-      SaveSettings(); // Step 2: Save settings
-      serializeSettings(); // Step 3: Serialize settings
+      serializeSettings(); // Step 2 & 3: Serialize settings calls Savesettings
       BuildWazebar(); // Step 4: Rebuild the WazeBar
       injectCss(); // Step 5: Inject CSS
       // Step 6: Instantiate Clipboard
@@ -917,7 +962,7 @@
 
     $("#WazeBarSettings").hide(); // Ensure the settings dialog is initially hidden
   }
-
+  
   function makeDialogMovable(element) {
     var pos = { top: 0, left: 0, x: 0, y: 0 };
   
@@ -1426,7 +1471,7 @@
       "#WazeBarAddFavorite:hover { background-color: #689F38; border-color: #689F38; }",
 
       // Unread messages popup delay styling
-      ".WazeBarUnread { max-height: 500px; z-index: 100; overflow: auto; display: flex; position: absolute; background-color: #f9f9f9; min-width: 200px; margin-top: -2px; padding: 8px; }",
+      ".WazeBarUnread { max-height: 500px; z-index: 100; overflow: auto; display: flex; position: absolute; background-color: #f9f9f9; min-width: 200px; max-width: 700px; margin-top: -2px; padding: 8px; }",
       ".WazeBarUnreadList {   list-style: none; padding: 0; margin: 0; }",
       ".WazeBarUnreadList.unread-item { position: relative; padding: 4px 4px; margin: 4px 0; background: #f1f1f1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }",
       ".WazeBarUnreadList.unread-item a { flex-grow: 1; text-decoration: none; color: #333; font-weight: normal;}",
@@ -1444,28 +1489,28 @@
       "#WazeBarSettings h4 { margin-top: 4px; margin-bottom: 4px; font-size: 14px; line-height: 1.2; text-align: center; }",
       "#WazeBarSettings #customLinksSection { margin-top: 5px; }",
       "#WazeBarSettings #customLinksSection div { margin-bottom: 0; }",
-      "#WazeBarSettings label { color: #000000; }",
+      "#WazeBarSettings label { font-weight: normal; margin-bottom: auto;}",
       // Inline element alignment for the settings inputs
       "#WazeBarSettings .flex-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }",
 
       // Flex container holds the flex columns on the Main Setting Menu diolog
-      ".flex-container { display: flex; align-items: flex-start; width: 100%; gap: 8px; box-sizing: border-box; max-height: 550px; overflow-y: auto;}",
-      ".flex-column { padding: 8px; position: relative; box-sizing: border-box; border: 1px solid #ccc; background-color: #f9f9f9; min-width: 200px;  max-width: 300px; flex: 1 1 auto; min-height: 550px; border-radius: 1%;}",
+      ".flex-container { display: flex; align-items: flex-start; width: 100%; gap: 8px; box-sizing: border-box; height: 490px; overflow-y: auto;}",
+      ".flex-column { padding: 8px; position: relative; box-sizing: border-box; border: 1px solid #ccc; background-color: #f9f9f9; width: 230px; flex: 1 1 auto; min-height: 490px; border-radius: 1%;}",
       ".left-column::after { content: ''; position: absolute; top: 0; right: 0; width: 0px; height: 100%; background-color: #ccc; }",
       ".right-column::before { content: ''; position: absolute; top: 0; left: 0; width: 0px; height: 100%; background-color: #ccc; }",
 
       // Color Picker styling for Forumn and Wiki links
-      "#colorPickerForumFont, #colorPickerWikiFont {height: 35px; border: 1px solid #000000; padding: 3px; border-radius: 6px; background-color: white; color: #000000; }",
+      "#colorPickerForumFont, #colorPickerWikiFont {border: 1px solid #000000; border-radius: 6px; background-color: white; }",
 
       // State rows styling
       ".state-row { display: flex; align-items: center; }",
       ".state-row div { padding: 4px 4px; }",
       ".checkbox-column { display: flex; justify-content: center; align-items: center; }",
       // State Table header styling
-      ".state-header { display: flex; align-items: center; background: #f1f1f1; font-weight: bold; }",
-      ".state-header div { padding: 6px; }",
+      ".state-header { display: inline-flex; }",
+      ".state-header div { padding: 8px; }",
       // State Flex-box for the table
-      ".state-column { flex: 3; }",
+      ".state-column { flex: 6; }",
       ".checkbox-column { flex: 1; }",
 
       // Horizontal rule styling
@@ -1480,7 +1525,7 @@
       // Custom List link styling
       "#WazeBarCustomLinksList { list-style: none; padding: 0; margin: 0;  }",
       ".custom-item { position: relative; padding: 4px; margin: 4px 0;  background: #f1f1f1; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; width: 100%; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); transition: background 0.3s ease, transform 0.3s ease; border: 1px solid #ddd; }",
-      ".custom-item a { display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; color: #555555; }", //{ flex-grow: 1; text-decoration: none; color: #555555; }
+      ".custom-item a { display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; color: #555555; }",
       ".custom-item a:visited { color: #555555; }",
       ".custom-item i { cursor: pointer; color: #f56a6a;  }",
       ".custom-item:hover { background: #33CCFF;  }",
@@ -1490,7 +1535,7 @@
       ".flex-row { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }",
       ".export-button, .import-button { font-size: 1.5rem; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.3s ease, transform 0.3s ease; }",
       ".export-button:hover, .import-button:hover { background-color: #0056b3; transform: scale(1.05); }",
-      "#txtWazebarSettings, #txtWazebarImportSettings { width: 100%; height: auto; min-height: 120px; max-height: 500px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; box-sizing: border-box; resize: vertical; }",
+      "#txtWazebarSettings, #txtWazebarImportSettings { width: 100%; height: 140px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; box-sizing: border-box; resize: none; }",
 
       // Ensure textareas align properly in flex container
       ".flex-row textarea { flex-grow: 0; }",
@@ -1503,7 +1548,7 @@
       ".checkbox-container input[type='checkbox'] { margin-right: 8px; }",
 
       // Custom styling for the region dropdown
-      ".styled-select { width: 220px; font-size: 14px; line-height: 0.5; height: 30px; padding: 1px; border: 1px solid #ccc; border-radius: 6px; background-color: #fff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); color: #000000;}",
+      ".styled-select { width: 95%;  border-radius: 6px; }",
       ".styled-select:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); outline: none; }",
     ].join(" ");
 
