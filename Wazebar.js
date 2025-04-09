@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Wazebar
 // @namespace    https://greasyfork.org/users/30701-justins83-waze
-// @version      2025.04.06.01
+// @version      2025.04.09.01
 // @description  Displays a bar at the top of the editor that displays inbox, forum & wiki links
 // @author       JustinS83
 // @include      https://beta.waze.com/*
@@ -174,7 +174,7 @@
         "</div>",
         // Other forum links
         WazeBarSettings.WMEBetaForum ? '<div class="WazeBarText WazeBarForumItem" id="WMEBetaForum"><a href="https://www.waze.com/discuss/c/editors/beta-community/4088" ' + LoadNewTab() + ">WME Beta</a></div>" : "",
-        WazeBarSettings.scriptsForum ? '<div class="WazeBarText WazeBarForumItem" id="ScriptsForum"><a href="https://www.waze.com/discuss/c/editors/addons-extensions-and-scripts/3984" ' + LoadNewTab() + ">Scripts</a></div>" : "",
+        WazeBarSettings.scriptsForum ? '<div class="WazeBarText WazeBarForumItem" id="Scripts"><a href="https://www.waze.com/discuss/c/editors/addons-extensions-and-scripts/3984" ' + LoadNewTab() + ">Scripts</a></div>" : "",
         WazeBarSettings.USSMForum ? '<div class="WazeBarText WazeBarForumItem" id="USSMForum"><a href="https://www.waze.com/discuss/c/editors/united-states/us-state-managers/4890" ' + LoadNewTab() + ">US SM</a></div>" : "",
         WazeBarSettings.USChampForum ? '<div class="WazeBarText WazeBarForumItem" id="USChampForum"><a href="https://www.waze.com/discuss/c/editors/united-states/us-waze-champs/4893" ' + LoadNewTab() + ">US Champ</a></div>" : "",
         WazeBarSettings.USWikiForum ? '<div class="WazeBarText WazeBarForumItem" id="USWikiForum"><a href="https://www.waze.com/discuss/c/editors/united-states/us-wiki-discussion/4894" ' + LoadNewTab() + ">US Wiki</a></div>" : "",
@@ -308,7 +308,7 @@
     // Update the UI elements
     setChecked("WazeForumSetting", WazeBarSettings?.DisplayWazeForum !== undefined ? WazeBarSettings.DisplayWazeForum : defaultSettings.DisplayWazeForum);
     setChecked("WMEBetaForumSetting", WazeBarSettings?.WMEBetaForum !== undefined ? WazeBarSettings.WMEBetaForum : defaultSettings.WMEBetaForum);
-    setChecked("ScriptsForum", WazeBarSettings?.scriptsForum !== undefined ? WazeBarSettings.scriptsForum : defaultSettings.scriptsForum);
+    setChecked("scriptsForum", WazeBarSettings?.scriptsForum !== undefined ? WazeBarSettings.scriptsForum : defaultSettings.scriptsForum);
     setChecked("USSMForumSetting", WazeBarSettings?.USSMForum !== undefined ? WazeBarSettings.USSMForum : defaultSettings.USSMForum);
     if (!forumPage) setChecked("USChampForumSetting", WazeBarSettings?.USChampForum !== undefined ? WazeBarSettings.USChampForum : defaultSettings.USChampForum);
     setChecked("USWikiForumSetting", WazeBarSettings?.USWikiForum !== undefined ? WazeBarSettings.USWikiForum : defaultSettings.USWikiForum);
@@ -398,7 +398,7 @@
   function checkForums() {
     if (debug) console.log(`${SCRIPT_NAME}: checkForums() called`);
     if (WazeBarSettings.WMEBetaForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/beta-community/4088", "WMEBetaForum", "WMEBetaForumCount");
-    if (WazeBarSettings.scriptsForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/addons-extensions-and-scripts/3984", "ScriptsForum", "ScriptsCount");
+    if (WazeBarSettings.scriptsForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/addons-extensions-and-scripts/3984", "Scripts", "ScriptsCount");
     if (WazeBarSettings.USSMForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/united-states/us-state-managers/4890", "USSMForum", "USSMForumCount");
     if (WazeBarSettings.USChampForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/united-states/us-waze-champs/4893", "USChampForum", "USChampForumCount");
     if (WazeBarSettings.USWikiForum) checkUnreadTopics("https://www.waze.com/discuss/c/editors/united-states/us-wiki-discussion/4894", "USWikiForum", "USWikiForumCount");
@@ -412,8 +412,15 @@
       }
     });
 
+    // only check custom link that might have topics  '/discuss/c or /discuss/tag or /discuss/search" in the URLs
     for (var i = 0; i < WazeBarSettings.CustomLinks.length; i++) {
-      if (WazeBarSettings.CustomLinks[i].href.includes("/discuss/")) checkUnreadTopics(WazeBarSettings.CustomLinks[i].href, WazeBarSettings.CustomLinks[i].text.replace(/\s/g, "") + i + "Forum", WazeBarSettings.CustomLinks[i].text.replace(/\s/g, "") + i + "ForumCount"); // JS55CT TEST
+      if (/\/discuss(?:\/c|\/tag|\/search)/.test(WazeBarSettings.CustomLinks[i].href)) {
+        checkUnreadTopics(
+          WazeBarSettings.CustomLinks[i].href,
+          WazeBarSettings.CustomLinks[i].text.replace(/\s/g, "") + i + "Forum",
+          WazeBarSettings.CustomLinks[i].text.replace(/\s/g, "") + i + "ForumCount"
+        );
+      }
     }
   }
 
@@ -770,8 +777,8 @@
         "</div>",
 
         "<div class='checkbox-container'>",
-        "<input type='checkbox' id='ScriptsForum' " + (WazeBarSettings.scriptsForum ? "checked" : "") + " />",
-        "<label for='ScriptsForum'>Scripts Forum</label>",
+        "<input type='checkbox' id='scriptsForum' " + (WazeBarSettings.scriptsForum ? "checked" : "") + " />",
+        "<label for='scriptsForum'>Scripts Forum</label>",
         "</div>",
 
         "<div class='checkbox-container'>",
@@ -1631,7 +1638,7 @@
   function updateWazeBarSettingsFromUI() {
     WazeBarSettings.DisplayWazeForum = isChecked("WazeForumSetting");
     WazeBarSettings.WMEBetaForum = isChecked("WMEBetaForumSetting");
-    WazeBarSettings.scriptsForum = isChecked("ScriptsForum");
+    WazeBarSettings.scriptsForum = isChecked("scriptsForum");
     WazeBarSettings.USSMForum = isChecked("USSMForumSetting");
     if (!forumPage) {
       WazeBarSettings.USChampForum = isChecked("USChampForumSetting");
