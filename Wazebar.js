@@ -1151,7 +1151,7 @@
         '<select id="WBRegions" class="styled-select">',
         '<option value="" selected disabled>Select Region</option>', // Default placeholder option
         '<option value="Northwest" data-abbr="NWR" data-states="Alaska,Idaho,Montana,Washington,Oregon,Wyoming" data-forum="" data-wiki="https://www.waze.com/discuss/t/usa-northwest/378999">Northwest</option>',
-        '<option value="Southwest" data-abbr="SWR" data-states="Arizona,California,Colorado,Hawaii,Nevada,New Mexico,Utah" data-forum="" data-wiki="https://www.waze.com/discuss/t/usa-southeast/379033">Southwest</option>',
+        '<option value="Southwest" data-abbr="SWR" data-states="Arizona,California,Colorado,Hawaii,Nevada,New Mexico,Utah" data-forum="" data-wiki="https://www.waze.com/discuss/t/usa-southwest/379026">Southwest</option>',
         '<option value="Plains" data-abbr="PLN" data-states="Iowa,Kansas,Minnesota,Missouri,Nebraska,North Dakota,South Dakota" data-forum="" data-wiki="https://www.waze.com/discuss/t/usa-plains/379009">Plains</option>',
         '<option value="South Central" data-abbr="SCR" data-states="Arkansas,Louisiana,Mississippi,Oklahoma,Texas" data-forum="" data-wiki="https://www.waze.com/discuss/t/usa-south-central/379032">South Central</option>',
         '<option value="Great Lakes" data-abbr="GLR" data-states="Illinois,Indiana,Michigan,Ohio,Wisconsin" data-forum="" data-wiki="https://www.waze.com/discuss/t/usa-great-lakes/379001">Great Lakes</option>',
